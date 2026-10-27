@@ -12,6 +12,7 @@ import type {
   StreakInfo,
   Task,
   TaskInput,
+  TaskStep,
   User,
 } from '../types';
 import { ApiError, api } from './client';
@@ -247,4 +248,67 @@ export const useOverview = () =>
   useQuery({
     queryKey: [...keys.stats, 'overview'],
     queryFn: () => api<OverviewData>('GET', '/stats/overview'),
+  });
+
+/* ---------- task steps and server features ---------- */
+
+export const useFeatures = () =>
+  useQuery({
+    queryKey: ['features'],
+    queryFn: () => api<{ aiSteps: boolean }>('GET', '/features'),
+    staleTime: Infinity,
+  });
+
+export const useAddSteps = () => {
+  const invalidate = useInvalidate(keys.tasks);
+  return useMutation({
+    mutationFn: ({ taskId, titles }: { taskId: string; titles: string[] }) =>
+      api<TaskStep[]>('POST', `/tasks/${taskId}/steps`, { titles }),
+    onSuccess: invalidate,
+  });
+};
+
+export const useUpdateStep = () => {
+  const qc = useQueryClient();
+  const invalidate = useInvalidate(keys.tasks);
+  return useMutation({
+    mutationFn: ({
+      taskId,
+      stepId,
+      ...changes
+    }: { taskId: string; stepId: string } & Partial<Pick<TaskStep, 'title' | 'done'>>) =>
+      api<TaskStep>('PATCH', `/tasks/${taskId}/steps/${stepId}`, changes),
+    // Ticking a box should feel instant: show the change now, roll back if the server refuses it.
+    onMutate: async ({ taskId, stepId, ...changes }) => {
+      await qc.cancelQueries({ queryKey: keys.tasks });
+      const previous = qc.getQueryData<ApiTask[]>(keys.tasks);
+      qc.setQueryData<ApiTask[]>(keys.tasks, (tasks) =>
+        tasks?.map((t) =>
+          t.id === taskId
+            ? { ...t, steps: t.steps?.map((s) => (s.id === stepId ? { ...s, ...changes } : s)) }
+            : t,
+        ),
+      );
+      return { previous };
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous) qc.setQueryData(keys.tasks, context.previous);
+    },
+    onSettled: invalidate,
+  });
+};
+
+export const useDeleteStep = () => {
+  const invalidate = useInvalidate(keys.tasks);
+  return useMutation({
+    mutationFn: ({ taskId, stepId }: { taskId: string; stepId: string }) =>
+      api<void>('DELETE', `/tasks/${taskId}/steps/${stepId}`),
+    onSuccess: invalidate,
+  });
+};
+
+export const useSuggestSteps = () =>
+  useMutation({
+    mutationFn: (taskId: string) =>
+      api<{ steps: string[] }>('POST', `/tasks/${taskId}/steps/suggest`),
   });

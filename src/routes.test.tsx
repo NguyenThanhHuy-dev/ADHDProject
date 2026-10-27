@@ -32,6 +32,19 @@ describe('routes', () => {
     expect(headings.length).toBeGreaterThan(0);
   });
 
+  it("says the server can't be reached instead of showing the sign-in screen", async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+    renderApp('/tasks');
+    expect(await screen.findByText("Can't reach the server")).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Sign in' })).not.toBeInTheDocument();
+
+    mockApi(emptyAccount); // the connection is back
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Try again' }));
+    expect((await screen.findAllByRole('heading', { name: 'Task List' })).length).toBeGreaterThan(
+      0,
+    );
+  });
+
   it('shows the sign-in screen when there is no session', async () => {
     mockApi({ 'GET /auth/me': { status: 401, body: { error: 'Unauthorized' } } });
     renderApp('/tasks');

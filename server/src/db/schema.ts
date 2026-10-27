@@ -52,6 +52,24 @@ export const tasks = pgTable(
   (t) => [index('tasks_user_completed_idx').on(t.userId, t.completedAt)],
 );
 
+export const taskSteps = pgTable(
+  'task_steps',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    taskId: uuid('task_id')
+      .notNull()
+      .references(() => tasks.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    position: integer('position').notNull(),
+    doneAt: timestamp('done_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('task_steps_task_idx').on(t.taskId, t.position)],
+);
+
 export const pomodoroSessions = pgTable(
   'pomodoro_sessions',
   {
@@ -118,4 +136,5 @@ export const userStreaks = pgTable('user_streaks', {
 
 export type User = typeof users.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
+export type TaskStep = typeof taskSteps.$inferSelect;
 export type PomodoroSession = typeof pomodoroSessions.$inferSelect;

@@ -1,6 +1,6 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { Box, ThemeProvider } from '@mui/material';
+import { Box, Button, ThemeProvider, Typography } from '@mui/material';
 import { createAppTheme } from './theme';
 import { useMe } from './api/hooks';
 import AuthPage from './pages/auth/AuthPage';
@@ -23,8 +23,9 @@ import Layout from './components/layout/Layout';
 function App() {
   const darkMode = useThemeStore((state) => state.darkMode);
 
-  const theme = useMemo(() => createAppTheme(darkMode), [darkMode]);
-  const { data: user, isLoading } = useMe();
+  const reducedMotion = useThemeStore((state) => state.reducedMotion);
+  const theme = useMemo(() => createAppTheme(darkMode, reducedMotion), [darkMode, reducedMotion]);
+  const { data: user, isLoading, isError, refetch, isRefetching } = useMe();
 
   return (
     <ThemeProvider theme={theme}>
@@ -32,6 +33,20 @@ function App() {
       {isLoading ? (
         <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
           <CircularProgress />
+        </Box>
+      ) : isError ? (
+        <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', p: 3 }}>
+          <Box sx={{ textAlign: 'center', maxWidth: 360 }}>
+            <Typography variant="h5" gutterBottom>
+              Can't reach the server
+            </Typography>
+            <Typography color="text.secondary" sx={{ mb: 3 }}>
+              Check your connection. You stay signed in; your data is safe on the server.
+            </Typography>
+            <Button variant="contained" onClick={() => refetch()} disabled={isRefetching}>
+              Try again
+            </Button>
+          </Box>
         </Box>
       ) : !user ? (
         <AuthPage />

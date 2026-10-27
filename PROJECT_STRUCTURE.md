@@ -25,9 +25,10 @@ src/
 public/                # favicon, manifest, sounds
 docs/screenshots/      # Images used by README
 server/                # REST API (Fastify + Drizzle + PostgreSQL)
-├── src/routes/        # auth, tasks, sessions, points, rewards
+├── src/routes/        # auth, tasks, steps, sessions, points, rewards, stats, import
 ├── src/domain/        # points ledger, streak, gacha, stats and recurrence rules (no HTTP)
 ├── src/jobs/          # overdue penalty job and scheduler
+├── src/services/      # Anthropic client for step suggestions
 ├── src/db/            # schema, client, migrate
 ├── drizzle/           # generated SQL migrations
 └── test/              # API tests (in-memory Postgres)

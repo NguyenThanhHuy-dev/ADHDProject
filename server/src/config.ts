@@ -14,6 +14,13 @@ const schema = z.object({
     .default('true')
     .transform((v) => v === 'true'),
   JOBS_INTERVAL_MINUTES: z.coerce.number().int().min(1).default(15),
+  // Optional: without a key the "suggest steps" feature is switched off.
+  // An empty value (as docker compose passes when unset) means "not configured".
+  ANTHROPIC_API_KEY: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined),
+  AI_MODEL: z.string().min(1).default('claude-opus-5-5'),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 

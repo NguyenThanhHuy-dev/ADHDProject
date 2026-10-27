@@ -39,6 +39,7 @@ import {
   TimerOutlined,
 } from '@mui/icons-material';
 import StatCard from '../../components/StatCard';
+import useThemeStore from '../../store/themeStore';
 import { usePoints, useSessions, useStreak, useTasks } from '../../api/hooks';
 
 const shortDate = (d: string) =>
@@ -46,6 +47,7 @@ const shortDate = (d: string) =>
 
 function Dashboard() {
   const theme = useTheme();
+  const animate = !useThemeStore((state) => state.reducedMotion);
   const [showHelp, setShowHelp] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
@@ -284,6 +286,7 @@ function Dashboard() {
                     contentStyle={chartTooltip}
                   />
                   <Line
+                    isAnimationActive={animate}
                     type="monotone"
                     dataKey="minutes"
                     stroke={theme.palette.primary.main}
@@ -323,7 +326,12 @@ function Dashboard() {
                     formatter={(value) => [`${value} tasks`, 'Completed']}
                     contentStyle={chartTooltip}
                   />
-                  <Bar dataKey="count" fill={theme.palette.secondary.main} radius={[6, 6, 0, 0]} />
+                  <Bar
+                    isAnimationActive={animate}
+                    dataKey="count"
+                    fill={theme.palette.secondary.main}
+                    radius={[6, 6, 0, 0]}
+                  />
                 </BarChart>
               </ResponsiveContainer>
             </Box>

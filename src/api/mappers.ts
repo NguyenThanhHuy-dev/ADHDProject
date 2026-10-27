@@ -1,4 +1,4 @@
-import type { InventoryItem, PomodoroSession, Reward, Task, TaskInput } from '../types';
+import type { InventoryItem, PomodoroSession, Reward, Task, TaskInput, TaskStep } from '../types';
 
 export interface ApiTask {
   id: string;
@@ -9,6 +9,7 @@ export interface ApiTask {
   dueAt: string | null;
   completedAt: string | null;
   createdAt: string;
+  steps?: TaskStep[];
 }
 
 export interface ApiSession {
@@ -39,6 +40,7 @@ export const toUiTask = (t: ApiTask): Task => ({
   description: t.description,
   quadrant: t.quadrant,
   recurrence: t.recurrence,
+  steps: t.steps ?? [],
   dueDate: t.dueAt ? isoToLocal(t.dueAt) : null,
   completed: t.completedAt !== null,
   completedAt: t.completedAt ?? undefined,

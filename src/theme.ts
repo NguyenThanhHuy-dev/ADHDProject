@@ -2,7 +2,7 @@ import { alpha, createTheme } from '@mui/material/styles';
 
 const font = '"Inter", "Roboto", "Helvetica", "Arial", sans-serif';
 
-export const createAppTheme = (darkMode: boolean) => {
+export const createAppTheme = (darkMode: boolean, reducedMotion = false) => {
   const mode = darkMode ? 'dark' : 'light';
   const divider = darkMode ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)';
 
@@ -25,6 +25,7 @@ export const createAppTheme = (darkMode: boolean) => {
       divider,
     },
     shape: { borderRadius: 14 },
+    ...(reducedMotion && { transitions: { create: () => 'none' } }),
     typography: {
       fontFamily: font,
       h4: {
@@ -42,8 +43,16 @@ export const createAppTheme = (darkMode: boolean) => {
       MuiCssBaseline: {
         styleOverrides: {
           body: { fontFeatureSettings: '"cv11", "ss01"' },
+          ...(reducedMotion && {
+            '*, *::before, *::after': {
+              animation: 'none !important',
+              transition: 'none !important',
+              scrollBehavior: 'auto !important',
+            },
+          }),
         },
       },
+      MuiButtonBase: { defaultProps: { disableRipple: reducedMotion } },
       MuiPaper: {
         defaultProps: { elevation: 0 },
         styleOverrides: {

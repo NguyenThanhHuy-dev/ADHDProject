@@ -10,3 +10,15 @@ globalThis.ResizeObserver = class {
   unobserve() {}
   disconnect() {}
 };
+
+// jsdom has no matchMedia; the theme store reads OS preferences through it.
+window.matchMedia ??= ((query: string) => ({
+  matches: false,
+  media: query,
+  addEventListener: () => {},
+  removeEventListener: () => {},
+  addListener: () => {},
+  removeListener: () => {},
+  onchange: null,
+  dispatchEvent: () => false,
+})) as unknown as typeof window.matchMedia;

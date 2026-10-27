@@ -1,4 +1,5 @@
 import { Box, Paper, Typography, useTheme } from '@mui/material';
+import useThemeStore from '../store/themeStore';
 import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const DonutCard = ({
@@ -13,6 +14,7 @@ const DonutCard = ({
   emptyText: string;
 }) => {
   const theme = useTheme();
+  const animate = !useThemeStore((state) => state.reducedMotion);
   const total = data.reduce((sum, d) => sum + d.value, 0);
   return (
     <Paper sx={{ p: 3, height: '100%' }}>
@@ -29,6 +31,7 @@ const DonutCard = ({
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
+                  isAnimationActive={animate}
                   data={data}
                   dataKey="value"
                   innerRadius={62}

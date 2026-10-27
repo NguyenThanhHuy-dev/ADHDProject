@@ -20,6 +20,7 @@ import {
 } from '@mui/icons-material';
 import { useHeatmap, useHours, useOverview, useWeekly } from '../../api/hooks';
 import StatCard from '../../components/StatCard';
+import useThemeStore from '../../store/themeStore';
 import { intensityLevel, toWeekColumns } from './heatmap';
 
 const QUADRANT_LABELS = {
@@ -36,6 +37,7 @@ const shortDate = (d: string) =>
 
 function Insights() {
   const theme = useTheme();
+  const animate = !useThemeStore((state) => state.reducedMotion);
   const { data: overview } = useOverview();
   const { data: heatmap } = useHeatmap(26);
   const { data: hours } = useHours();
@@ -191,7 +193,7 @@ function Insights() {
                     formatter={(v) => [`${v} min`, 'Focus']}
                     contentStyle={tooltipStyle}
                   />
-                  <Bar dataKey="minutes" radius={[4, 4, 0, 0]}>
+                  <Bar isAnimationActive={animate} dataKey="minutes" radius={[4, 4, 0, 0]}>
                     {(hours?.hours ?? []).map((h) => (
                       <Cell
                         key={h.hour}
@@ -281,6 +283,7 @@ function Insights() {
                     contentStyle={tooltipStyle}
                   />
                   <Bar
+                    isAnimationActive={animate}
                     yAxisId="min"
                     dataKey="minutes"
                     name="Focus (min)"
@@ -288,6 +291,7 @@ function Insights() {
                     radius={[6, 6, 0, 0]}
                   />
                   <Line
+                    isAnimationActive={animate}
                     yAxisId="tasks"
                     type="monotone"
                     dataKey="tasksCompleted"

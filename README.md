@@ -31,6 +31,9 @@ daily focus streaks and a gacha-style reward system. Accounts and data live in P
 - Pomodoro timer: the server checks the time really passed before it pays points, so sessions cannot be farmed
 - Eisenhower matrix (Q1-Q4) with points per quadrant, repeating tasks (daily or weekly) and an overdue penalty job
 - Streaks counted per day in your own time zone, with bonus points from day 2
+- Task steps (a small checklist per task) with optional AI suggestions: Claude splits a big task into 3-8 concrete steps and you pick which to keep
+- Installable as an app (PWA): the shell works offline, your data stays on the server
+- Reduce-motion setting; dark mode and motion preferences are remembered and follow your system the first time
 - Insights: focus calendar (heatmap), best time of day, weekly trend, completion by priority
 - Rewards: a server-side gacha with four rarities, an append-only points ledger
 - Dark mode, sound cues, installable from a single `docker compose` command
@@ -47,6 +50,8 @@ npm run db:migrate                   # create the tables
 npm run dev:server                   # API on http://localhost:3001
 npm run dev                          # web on http://localhost:5173 (proxies /api to the API)
 ```
+
+Optional: set `ANTHROPIC_API_KEY` in `server/.env` to switch on "Suggest steps with AI" (model from `AI_MODEL`, default `claude-opus-5-5`; a smaller model such as `claude-haiku-5-5` is cheaper). Without a key the button is simply hidden.
 
 Create an account on the sign-in screen. Tasks saved in the browser before accounts existed can be imported from the banner on first sign-in (points and rewards are not imported: they only come from server-verified activity).
 
@@ -69,6 +74,7 @@ Import the repo in Vercel (framework preset: Vite). `vercel.json` rewrites all r
 
 ```bash
 JWT_SECRET=$(openssl rand -hex 32) docker compose --profile full up --build
+# add ANTHROPIC_API_KEY=... to the same command to enable the AI suggestions
 # web on http://localhost:8080, API behind it, PostgreSQL with a persistent volume
 ```
 

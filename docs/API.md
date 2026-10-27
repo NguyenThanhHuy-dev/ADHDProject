@@ -25,6 +25,19 @@ Errors look like `{ "error": "message" }`; validation errors are `400` with `{ "
 | DELETE | `/tasks/:id`               | `204`                                                                                                                                                       |
 | POST   | `/import`                  | `{ tasks: [...] }` up to 500. Creates tasks only; never points or rewards                                                                                   |
 
+## Task steps
+
+A checklist per task. Steps never complete the task and never pay points (so splitting a task cannot farm rewards). A task has at most 30 steps. Tasks returned by the API include their `steps`.
+
+| Method | Path                       | Notes                                                                                                                                                                                                         |
+| ------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/tasks/:id/steps`         | `{ titles: ["...", ...] }` (1-12), appended in order. `400` past the limit                                                                                                                                    |
+| PATCH  | `/tasks/:id/steps/:stepId` | `title?`, `done?`                                                                                                                                                                                             |
+| DELETE | `/tasks/:id/steps/:stepId` | `204`                                                                                                                                                                                                         |
+| POST   | `/tasks/:id/steps/suggest` | Returns `{ steps: [...] }` from the AI without saving anything. `503` if no AI key is configured, `422` if the model declines the task, `502` if the AI service is down. Rate limited to 20 per hour per user |
+
+`GET /features` (no login) returns `{ aiSteps: boolean }` so the web app can hide the button when the server has no AI configured.
+
 ## Focus sessions
 
 | Method | Path                     | Notes                                                                                                                                                                                                                                                      |

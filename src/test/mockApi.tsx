@@ -82,6 +82,7 @@ export const emptyAccount: Record<string, Handler> = {
   'GET /points': { body: { balance: 0, history: [] } },
   'GET /rewards/inventory': { body: [] },
   'GET /rewards/catalog': { body: { cost: 30, rewards: [] } },
+  'GET /features': { body: { aiSteps: false } },
   'GET /stats/heatmap': {
     body: { timeZone: 'UTC', from: '2030-01-01', to: '2030-01-07', days: [] },
   },

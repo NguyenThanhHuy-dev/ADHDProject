@@ -16,6 +16,8 @@ import { pointRoutes } from './routes/points';
 import { rewardRoutes } from './routes/rewards';
 import { sessionRoutes } from './routes/sessions';
 import { statsRoutes } from './routes/stats';
+import { stepRoutes } from './routes/steps';
+import type { StepSuggester } from './services/ai';
 import { taskRoutes } from './routes/tasks';
 
 declare module 'fastify' {
@@ -26,6 +28,8 @@ declare module 'fastify' {
     /** Injected so tests can control time and randomness. */
     now: () => Date;
     random: () => number;
+    /** Null when no AI provider is configured. */
+    suggester: StepSuggester | null;
   }
 }
 
@@ -39,6 +43,7 @@ declare module '@fastify/jwt' {
 export interface AppDeps {
   now?: () => Date;
   random?: () => number;
+  suggester?: StepSuggester | null;
 }
 
 const secureRandom = () => randomInt(0, 2 ** 32) / 2 ** 32;
@@ -58,6 +63,7 @@ export const buildApp = async (
   app.decorate('config', config);
   app.decorate('now', deps.now ?? (() => new Date()));
   app.decorate('random', deps.random ?? secureRandom);
+  app.decorate('suggester', deps.suggester ?? null);
 
   await app.register(helmet);
   await app.register(cors, { origin: config.CORS_ORIGIN, credentials: true });
@@ -82,6 +88,9 @@ export const buildApp = async (
     return reply.status(status).send({ error: message });
   });
 
+  // Lets the web app hide features this server cannot provide.
+  app.get('/api/features', async () => ({ aiSteps: app.suggester !== null }));
+
   app.get('/api/health', async (_request, reply) => {
     try {
       await app.db.execute(sql`select 1`);
@@ -92,6 +101,7 @@ export const buildApp = async (
   });
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(taskRoutes, { prefix: '/api/tasks' });
+  await app.register(stepRoutes, { prefix: '/api/tasks/:taskId/steps' });
   await app.register(sessionRoutes, { prefix: '/api/sessions' });
   await app.register(pointRoutes, { prefix: '/api/points' });
   await app.register(rewardRoutes, { prefix: '/api/rewards' });

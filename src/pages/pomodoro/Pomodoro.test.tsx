@@ -10,6 +10,7 @@ const task = {
   description: '',
   quadrant: 'q1',
   recurrence: 'none',
+  steps: [],
   dueAt: null,
   completedAt: null,
   createdAt: '2030-01-01T00:00:00.000Z',

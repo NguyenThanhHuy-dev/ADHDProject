@@ -16,6 +16,7 @@ import {
   VolumeUp as VolumeUpIcon,
   DarkMode as DarkModeIcon,
   Language as LanguageIcon,
+  MotionPhotosOffRounded as ReduceMotionIcon,
 } from '@mui/icons-material';
 import useSoundStore from '../../store/soundStore';
 import useThemeStore from '../../store/themeStore';
@@ -26,6 +27,8 @@ function Settings() {
   const toggleSound = useSoundStore((state) => state.toggleSound);
   const darkMode = useThemeStore((state) => state.darkMode);
   const toggleDarkMode = useThemeStore((state) => state.toggleDarkMode);
+  const reducedMotion = useThemeStore((state) => state.reducedMotion);
+  const toggleReducedMotion = useThemeStore((state) => state.toggleReducedMotion);
   const notificationsEnabled = useNotificationStore((state) => state.notificationsEnabled);
   const toggleNotifications = useNotificationStore((state) => state.toggleNotifications);
 
@@ -99,6 +102,27 @@ function Settings() {
             <ListItemText primary="Dark Mode" secondary="Switch between light and dark theme" />
             <FormControlLabel
               control={<Switch checked={darkMode} onChange={toggleDarkMode} color="primary" />}
+              label=""
+            />
+          </ListItem>
+          <Divider />
+          <ListItem>
+            <ListItemIcon>
+              <ReduceMotionIcon />
+            </ListItemIcon>
+            <ListItemText
+              primary="Reduce motion"
+              secondary="Fewer animations and transitions, for less distraction"
+            />
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={reducedMotion}
+                  onChange={toggleReducedMotion}
+                  color="primary"
+                  inputProps={{ 'aria-label': 'Reduce motion' }}
+                />
+              }
               label=""
             />
           </ListItem>

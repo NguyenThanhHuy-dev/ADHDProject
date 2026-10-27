@@ -12,6 +12,13 @@ export interface User {
 /** Task as the UI uses it; `dueDate` is a local "YYYY-MM-DDTHH:mm" string. */
 export type Recurrence = 'none' | 'daily' | 'weekly';
 
+export interface TaskStep {
+  id: string;
+  title: string;
+  position: number;
+  done: boolean;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -19,6 +26,7 @@ export interface Task {
   quadrant: QuadrantId;
   dueDate: string | null;
   recurrence: Recurrence;
+  steps: TaskStep[];
   completed: boolean;
   completedAt?: string;
   createdAt: string;

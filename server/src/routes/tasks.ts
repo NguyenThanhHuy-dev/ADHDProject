@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { tasks, users } from '../db/schema';
 import { award, QUADRANT_POINTS } from '../domain/points';
 import { nextDueAt } from '../domain/recurrence';
+import { stepsByTask } from '../domain/steps';
 
 const quadrant = z.enum(['q1', 'q2', 'q3', 'q4']);
 const recurrence = z.enum(['none', 'daily', 'weekly']);
@@ -45,11 +46,17 @@ export const taskRoutes: FastifyPluginAsync = async (app) => {
         : status === 'done'
           ? isNotNull(tasks.completedAt)
           : undefined;
-    return app.db
+    const rows = await app.db
       .select()
       .from(tasks)
       .where(and(eq(tasks.userId, request.user.sub), filter))
       .orderBy(desc(tasks.createdAt));
+    const steps = await stepsByTask(
+      app.db,
+      request.user.sub,
+      rows.map((t) => t.id),
+    );
+    return rows.map((t) => ({ ...t, steps: steps.get(t.id) ?? [] }));
   });
 
   app.post('/', async (request, reply) => {
@@ -61,7 +68,7 @@ export const taskRoutes: FastifyPluginAsync = async (app) => {
       .insert(tasks)
       .values({ ...body, userId: request.user.sub })
       .returning();
-    return reply.status(201).send(task);
+    return reply.status(201).send({ ...task, steps: [] });
   });
 
   app.patch('/:id', async (request, reply) => {
@@ -84,7 +91,8 @@ export const taskRoutes: FastifyPluginAsync = async (app) => {
       .where(owned(id, request.user.sub))
       .returning();
     if (!task) return reply.status(404).send({ error: 'Task not found' });
-    return task;
+    const steps = await stepsByTask(app.db, request.user.sub, [task.id]);
+    return { ...task, steps: steps.get(task.id) ?? [] };
   });
 
   // Idempotent: completing a finished task keeps the original completion time and pays out only once.
@@ -128,7 +136,13 @@ export const taskRoutes: FastifyPluginAsync = async (app) => {
       return existing ? { task: existing, pointsAwarded: 0, nextTask: null } : null;
     });
     if (!result) return reply.status(404).send({ error: 'Task not found' });
-    return { ...result.task, pointsAwarded: result.pointsAwarded, nextTask: result.nextTask };
+    const steps = await stepsByTask(app.db, userId, [result.task.id]);
+    return {
+      ...result.task,
+      steps: steps.get(result.task.id) ?? [],
+      pointsAwarded: result.pointsAwarded,
+      nextTask: result.nextTask ? { ...result.nextTask, steps: [] } : null,
+    };
   });
 
   app.delete('/:id', async (request, reply) => {

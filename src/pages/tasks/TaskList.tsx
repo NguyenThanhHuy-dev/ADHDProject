@@ -34,6 +34,7 @@ import {
   Check as CheckIcon,
   Help as HelpIcon,
 } from '@mui/icons-material';
+import TaskSteps from './TaskSteps';
 import {
   useCompleteTask,
   useCreateTask,
@@ -313,6 +314,7 @@ function TaskList() {
                         mb: 1,
                         borderRadius: 2,
                         display: 'flex',
+                        flexWrap: 'wrap',
                         flexDirection: { xs: 'column', sm: 'row' },
                         alignItems: { xs: 'stretch', sm: 'center' },
                         gap: 2,
@@ -407,6 +409,9 @@ function TaskList() {
                         >
                           <DeleteIcon />
                         </IconButton>
+                      </Box>
+                      <Box sx={{ flexBasis: '100%', minWidth: 0 }}>
+                        <TaskSteps task={task} />
                       </Box>
                     </ListItem>
                   ))}

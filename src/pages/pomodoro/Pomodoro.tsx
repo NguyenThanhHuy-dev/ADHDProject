@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
   Button,
-  TextField,
   Paper,
   Grid,
   IconButton,
@@ -20,7 +19,7 @@ import {
   Step,
   StepLabel,
   StepContent,
-} from "@mui/material";
+} from '@mui/material';
 import {
   PlayArrow as PlayIcon,
   Pause as PauseIcon,
@@ -28,11 +27,11 @@ import {
   Settings as SettingsIcon,
   Restore as RestoreIcon,
   Help as HelpIcon,
-} from "@mui/icons-material";
-import usePomodoroStore from "../../store/pomodoroStore";
-import useRewardStore from "../../store/rewardStore";
-import useSoundStore from "../../store/soundStore";
-import useTaskStore from "../../store/taskStore";
+} from '@mui/icons-material';
+import usePomodoroStore from '../../store/pomodoroStore';
+import useRewardStore from '../../store/rewardStore';
+import useSoundStore from '../../store/soundStore';
+import useTaskStore from '../../store/taskStore';
 
 const POMODORO_DURATIONS = [15, 25, 45, 60, 90, 120];
 const BREAK_DURATIONS = [5, 10, 15];
@@ -41,16 +40,16 @@ const DEFAULT_BREAK_TIME = 5;
 const GRAY_TASK_DURATION = 15;
 
 // Updated color scheme progressing from cool to warm as duration increases
-const DURATION_COLORS = {
-  15: "#4cc9f0", // Cool blue for short sessions
-  25: "#4361ee", // Medium blue for standard sessions
-  45: "#3a0ca3", // Deep blue for extended sessions
-  60: "#7209b7", // Purple for long sessions
-  90: "#f72585", // Hot pink for very long sessions
-  120: "#ff9e00", // Warm orange for ultra-long sessions
+const DURATION_COLORS: Record<number, string> = {
+  15: '#4cc9f0', // Cool blue for short sessions
+  25: '#4361ee', // Medium blue for standard sessions
+  45: '#3a0ca3', // Deep blue for extended sessions
+  60: '#7209b7', // Purple for long sessions
+  90: '#f72585', // Hot pink for very long sessions
+  120: '#ff9e00', // Warm orange for ultra-long sessions
 };
 
-const QUADRANT_POINTS = {
+const QUADRANT_POINTS: Record<string, number> = {
   q1: 15, // Urgent & Important
   q2: 10, // Important, Not Urgent
   q3: 5, // Urgent, Not Important
@@ -65,14 +64,12 @@ function Pomodoro() {
   const [workTime, setWorkTime] = useState(DEFAULT_WORK_TIME);
   const [breakTime, setBreakTime] = useState(DEFAULT_BREAK_TIME);
   const [totalTime, setTotalTime] = useState(DEFAULT_WORK_TIME * 60);
-  const [selectedTask, setSelectedTask] = useState("");
-  const timerRef = useRef(null);
-  const progressRef = useRef(null);
+  const [selectedTask, setSelectedTask] = useState<number | ''>('');
+  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const progressRef = useRef<SVGCircleElement>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
-  const [backgroundColor, setBackgroundColor] = useState(
-    DURATION_COLORS[DEFAULT_WORK_TIME]
-  );
+  const [backgroundColor, setBackgroundColor] = useState(DURATION_COLORS[DEFAULT_WORK_TIME]);
 
   const tasks = useTaskStore((state) => state.tasks);
   const pendingTasks = tasks.filter((task) => !task.completed);
@@ -82,29 +79,29 @@ function Pomodoro() {
 
   const tutorialSteps = [
     {
-      label: "Select a Task",
+      label: 'Select a Task',
       description:
-        "Choose a task from the dropdown menu. Gray tasks (not urgent, not important) will automatically set to 15 minutes, while other tasks will default to 25 minutes.",
+        'Choose a task from the dropdown menu. Gray tasks (not urgent, not important) will automatically set to 15 minutes, while other tasks will default to 25 minutes.',
     },
     {
-      label: "Adjust Timer (Optional)",
+      label: 'Adjust Timer (Optional)',
       description:
-        "You can customize the work duration using the settings menu. Click the settings icon to open it. Different durations are recommended for different types of tasks.",
+        'You can customize the work duration using the settings menu. Click the settings icon to open it. Different durations are recommended for different types of tasks.',
     },
     {
-      label: "Start the Timer",
+      label: 'Start the Timer',
       description:
-        "Click the Start button to begin your work session. The circular progress indicator will show your remaining time.",
+        'Click the Start button to begin your work session. The circular progress indicator will show your remaining time.',
     },
     {
-      label: "Take Breaks",
+      label: 'Take Breaks',
       description:
         "After completing a work session, you'll automatically enter a break period. Use this time to rest and recharge.",
     },
     {
-      label: "Earn Points",
+      label: 'Earn Points',
       description:
-        "Complete tasks to earn points based on their importance and urgency. These points can be used to unlock rewards in the Rewards page.",
+        'Complete tasks to earn points based on their importance and urgency. These points can be used to unlock rewards in the Rewards page.',
     },
   ];
 
@@ -114,6 +111,7 @@ function Pomodoro() {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             clearInterval(timerRef.current);
+            // eslint-disable-next-line react-hooks/immutability
             handleTimerComplete();
             return 0;
           }
@@ -122,39 +120,39 @@ function Pomodoro() {
       }, 1000);
     }
     return () => clearInterval(timerRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- shortcut: re-subscribes only on run/stop; upgrade with a ref to the latest callback
   }, [isRunning]);
 
   useEffect(() => {
     if (progressRef.current && totalTime > 0) {
       const progress = ((totalTime - timeLeft) / totalTime) * 283;
-      progressRef.current.style.strokeDashoffset = 283 - progress;
+      progressRef.current.style.strokeDashoffset = String(283 - progress);
     }
   }, [timeLeft, totalTime]);
 
-  const handleTaskSelect = (taskId) => {
+  const handleTaskSelect = (taskId: number | '') => {
     setSelectedTask(taskId);
     const task = tasks.find((t) => t.id === taskId);
     if (task && !isRunning) {
-      const defaultDuration =
-        task.quadrant === "q4" ? GRAY_TASK_DURATION : DEFAULT_WORK_TIME;
+      const defaultDuration = task.quadrant === 'q4' ? GRAY_TASK_DURATION : DEFAULT_WORK_TIME;
       setWorkTime(defaultDuration);
       setBackgroundColor(DURATION_COLORS[defaultDuration]);
       setTimeLeft(defaultDuration * 60);
       setTotalTime(defaultDuration * 60);
       if (progressRef.current) {
-        progressRef.current.style.strokeDashoffset = 0;
+        progressRef.current.style.strokeDashoffset = '0';
       }
     }
   };
 
-  const handleWorkTimeChange = (newDuration) => {
+  const handleWorkTimeChange = (newDuration: number) => {
     setWorkTime(newDuration);
     setBackgroundColor(DURATION_COLORS[newDuration]);
     if (!isRunning) {
       setTimeLeft(newDuration * 60);
       setTotalTime(newDuration * 60);
       if (progressRef.current) {
-        progressRef.current.style.strokeDashoffset = 0;
+        progressRef.current.style.strokeDashoffset = '0';
       }
     }
   };
@@ -164,20 +162,20 @@ function Pomodoro() {
       return; // Don't start if no task is selected in work mode
     }
     if (!isRunning) {
-      playSound("start");
+      playSound('start');
     } else {
-      playSound("notification");
+      playSound('notification');
     }
     setIsRunning(!isRunning);
   };
 
   const handleReset = () => {
-    playSound("notification");
+    playSound('notification');
     setIsRunning(false);
     setTimeLeft(isWorkMode ? workTime * 60 : breakTime * 60);
     setTotalTime(isWorkMode ? workTime * 60 : breakTime * 60);
     if (progressRef.current) {
-      progressRef.current.style.strokeDashoffset = 0;
+      progressRef.current.style.strokeDashoffset = '0';
     }
     setActiveStep(0);
   };
@@ -193,16 +191,16 @@ function Pomodoro() {
         startTime: new Date(start).toISOString(),
         endTime: now.toISOString(),
         duration: Number(workTime) || 0,
-        type: "work",
+        type: 'work',
         completed: true,
       });
       addPoints(10);
-      playSound("complete");
+      playSound('complete');
       setTimeLeft(breakTime * 60);
       setTotalTime(breakTime * 60);
       setIsWorkMode(false);
     } else {
-      playSound("notification");
+      playSound('notification');
       setTimeLeft(workTime * 60);
       setTotalTime(workTime * 60);
       setIsWorkMode(true);
@@ -215,7 +213,7 @@ function Pomodoro() {
     setShowSettings(false);
     setIsRunning(false);
     if (progressRef.current) {
-      progressRef.current.style.strokeDashoffset = 0;
+      progressRef.current.style.strokeDashoffset = '0';
     }
   };
 
@@ -227,20 +225,18 @@ function Pomodoro() {
     setTotalTime(DEFAULT_WORK_TIME * 60);
     setIsRunning(false);
     if (progressRef.current) {
-      progressRef.current.style.strokeDashoffset = 0;
+      progressRef.current.style.strokeDashoffset = '0';
     }
-    playSound("notification");
+    playSound('notification');
   };
 
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const getTaskPoints = (task) => {
+  const getTaskPoints = (task: { quadrant: string }) => {
     return QUADRANT_POINTS[task.quadrant] || 0;
   };
 
@@ -254,7 +250,7 @@ function Pomodoro() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">Pomodoro Timer</Typography>
         <Box>
           <Tooltip title="Help">
@@ -275,35 +271,27 @@ function Pomodoro() {
           <Paper
             sx={{
               p: 3,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              transition: "all 0.5s ease",
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              transition: 'all 0.5s ease',
               background: `linear-gradient(135deg, ${backgroundColor}20 0%, ${backgroundColor}08 100%)`,
               boxShadow: `0 4px 20px ${backgroundColor}30`,
-              "&:hover": {
+              '&:hover': {
                 boxShadow: `0 6px 25px ${backgroundColor}40`,
               },
             }}
           >
-            <Box sx={{ position: "relative", width: 300, height: 300 }}>
+            <Box sx={{ position: 'relative', width: 300, height: 300 }}>
               <svg
                 viewBox="0 0 100 100"
                 style={{
-                  width: "100%",
-                  height: "100%",
-                  transform: "rotate(-90deg)",
+                  width: '100%',
+                  height: '100%',
+                  transform: 'rotate(-90deg)',
                 }}
               >
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="45"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                  sx={{ color: "grey.300" }}
-                />
+                <circle cx="50" cy="50" r="45" fill="none" stroke="#e0e0e0" strokeWidth="4" />
                 <circle
                   ref={progressRef}
                   cx="50"
@@ -314,19 +302,19 @@ function Pomodoro() {
                   strokeWidth="4"
                   strokeDasharray="283"
                   strokeDashoffset="0"
-                  sx={{
-                    transition: "stroke-dashoffset 1s linear, stroke 0.5s ease",
-                    filter: "drop-shadow(0 0 8px rgba(0,0,0,0.1))",
+                  style={{
+                    transition: 'stroke-dashoffset 1s linear, stroke 0.5s ease',
+                    filter: 'drop-shadow(0 0 8px rgba(0,0,0,0.1))',
                   }}
                 />
               </svg>
               <Box
                 sx={{
-                  position: "absolute",
-                  top: "50%",
-                  left: "50%",
-                  transform: "translate(-50%, -50%)",
-                  textAlign: "center",
+                  position: 'absolute',
+                  top: '50%',
+                  left: '50%',
+                  transform: 'translate(-50%, -50%)',
+                  textAlign: 'center',
                 }}
               >
                 <Typography
@@ -335,7 +323,7 @@ function Pomodoro() {
                   sx={{
                     color: backgroundColor,
                     textShadow: `0 2px 4px ${backgroundColor}30`,
-                    fontWeight: "bold",
+                    fontWeight: 'bold',
                   }}
                 >
                   {formatTime(timeLeft)}
@@ -343,11 +331,11 @@ function Pomodoro() {
                 <Typography
                   variant="h6"
                   sx={{
-                    color: "text.secondary",
+                    color: 'text.secondary',
                     mt: 1,
                   }}
                 >
-                  {isWorkMode ? "Work Session" : "Break Time"}
+                  {isWorkMode ? 'Work Session' : 'Break Time'}
                 </Typography>
               </Box>
             </Box>
@@ -358,32 +346,32 @@ function Pomodoro() {
                 <Select
                   value={selectedTask}
                   label="Select Task"
-                  onChange={(e) => handleTaskSelect(e.target.value)}
+                  onChange={(e) => handleTaskSelect(e.target.value as number | '')}
                   disabled={isRunning}
                 >
                   {pendingTasks.map((task) => (
                     <MenuItem key={task.id} value={task.id}>
                       <Tooltip
                         title={
-                          task.quadrant === "q4"
-                            ? "Gray tasks automatically set to 15 minutes"
-                            : "Other tasks automatically set to 25 minutes"
+                          task.quadrant === 'q4'
+                            ? 'Gray tasks automatically set to 15 minutes'
+                            : 'Other tasks automatically set to 25 minutes'
                         }
                         placement="right"
                       >
                         <Box
                           sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            width: "100%",
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            width: '100%',
                           }}
                         >
                           <Typography>{task.title}</Typography>
                           <Typography
                             sx={{
                               ml: 1,
-                              color: "text.secondary",
-                              fontSize: "0.875rem",
+                              color: 'text.secondary',
+                              fontSize: '0.875rem',
                             }}
                           >
                             +{getTaskPoints(task)} pts
@@ -396,21 +384,17 @@ function Pomodoro() {
               </FormControl>
             )}
 
-            <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
+            <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
               <Button
                 variant="contained"
-                color={isWorkMode ? "primary" : "secondary"}
+                color={isWorkMode ? 'primary' : 'secondary'}
                 onClick={handleStartPause}
                 startIcon={isRunning ? <PauseIcon /> : <PlayIcon />}
                 disabled={isWorkMode && !selectedTask}
               >
-                {isRunning ? "Pause" : "Start"}
+                {isRunning ? 'Pause' : 'Start'}
               </Button>
-              <Button
-                variant="outlined"
-                onClick={handleReset}
-                startIcon={<RefreshIcon />}
-              >
+              <Button variant="outlined" onClick={handleReset} startIcon={<RefreshIcon />}>
                 Reset
               </Button>
             </Box>
@@ -427,21 +411,17 @@ function Pomodoro() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Sessions Completed
                 </Typography>
-                <Typography variant="h4">
-                  {usePomodoroStore.getState().sessions.length}
-                </Typography>
+                <Typography variant="h4">{usePomodoroStore.getState().sessions.length}</Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">
                   Total Focus Time
                 </Typography>
                 <Typography variant="h4">
-                  {usePomodoroStore
-                    .getState()
-                    .sessions.reduce((acc, session) => {
-                      const d = Number(session.duration);
-                      return acc + (isNaN(d) ? 0 : d);
-                    }, 0)}
+                  {usePomodoroStore.getState().sessions.reduce((acc, session) => {
+                    const d = Number(session.duration);
+                    return acc + (isNaN(d) ? 0 : d);
+                  }, 0)}
                   m
                 </Typography>
               </Grid>
@@ -452,9 +432,9 @@ function Pomodoro() {
             <Paper sx={{ p: 3, mt: 3 }}>
               <Box
                 sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
                   mb: 2,
                 }}
               >
@@ -477,38 +457,37 @@ function Pomodoro() {
                     <Select
                       value={workTime}
                       label="Work Duration"
-                      onChange={(e) => handleWorkTimeChange(e.target.value)}
+                      onChange={(e) => handleWorkTimeChange(Number(e.target.value))}
                     >
                       {POMODORO_DURATIONS.map((duration) => (
                         <MenuItem key={duration} value={duration}>
                           <Tooltip
                             title={
                               duration === 25
-                                ? "Classic Pomodoro duration - recommended for most tasks"
+                                ? 'Classic Pomodoro duration - recommended for most tasks'
                                 : duration === 15
-                                ? "Short sessions - good for quick tasks or when you're feeling distracted"
-                                : duration === 45
-                                ? "Extended sessions - good for deep work"
-                                : duration === 60
-                                ? "Long sessions - ideal for complex tasks"
-                                : duration === 90
-                                ? "Very long sessions - best for intense focus work"
-                                : "Ultra-long sessions - use sparingly for marathon work sessions"
+                                  ? "Short sessions - good for quick tasks or when you're feeling distracted"
+                                  : duration === 45
+                                    ? 'Extended sessions - good for deep work'
+                                    : duration === 60
+                                      ? 'Long sessions - ideal for complex tasks'
+                                      : duration === 90
+                                        ? 'Very long sessions - best for intense focus work'
+                                        : 'Ultra-long sessions - use sparingly for marathon work sessions'
                             }
                             placement="right"
                           >
-                            <Box sx={{ width: "100%" }}>
+                            <Box sx={{ width: '100%' }}>
                               {duration} minutes
                               {selectedTask &&
-                                tasks.find((t) => t.id === selectedTask)
-                                  ?.quadrant === "q4" &&
+                                tasks.find((t) => t.id === selectedTask)?.quadrant === 'q4' &&
                                 duration === 15 && (
                                   <Typography
                                     component="span"
                                     sx={{
                                       ml: 1,
-                                      color: "text.secondary",
-                                      fontSize: "0.75rem",
+                                      color: 'text.secondary',
+                                      fontSize: '0.75rem',
                                     }}
                                   >
                                     (Default for gray tasks)
@@ -527,21 +506,21 @@ function Pomodoro() {
                     <Select
                       value={breakTime}
                       label="Break Duration"
-                      onChange={(e) => setBreakTime(e.target.value)}
+                      onChange={(e) => setBreakTime(Number(e.target.value))}
                     >
                       {BREAK_DURATIONS.map((duration) => (
                         <MenuItem key={duration} value={duration}>
                           <Tooltip
                             title={
                               duration === 5
-                                ? "Standard break - recommended for most work sessions"
+                                ? 'Standard break - recommended for most work sessions'
                                 : duration === 10
-                                ? "Extended break - good after longer work sessions"
-                                : "Long break - ideal after intense focus periods"
+                                  ? 'Extended break - good after longer work sessions'
+                                  : 'Long break - ideal after intense focus periods'
                             }
                             placement="right"
                           >
-                            <Box sx={{ width: "100%" }}>{duration} minutes</Box>
+                            <Box sx={{ width: '100%' }}>{duration} minutes</Box>
                           </Tooltip>
                         </MenuItem>
                       ))}
@@ -549,7 +528,7 @@ function Pomodoro() {
                   </FormControl>
                 </Grid>
               </Grid>
-              <Box sx={{ mt: 2, display: "flex", justifyContent: "flex-end" }}>
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
                 <Button variant="contained" onClick={handleSettingsSave}>
                   Save Settings
                 </Button>
@@ -559,12 +538,7 @@ function Pomodoro() {
         </Grid>
       </Grid>
 
-      <Dialog
-        open={showHelp}
-        onClose={() => setShowHelp(false)}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={showHelp} onClose={() => setShowHelp(false)} maxWidth="md" fullWidth>
         <DialogTitle>How to Use the Pomodoro Timer</DialogTitle>
         <DialogContent>
           <Stepper activeStep={activeStep} orientation="vertical">
@@ -587,15 +561,9 @@ function Pomodoro() {
                         }
                         sx={{ mt: 1, mr: 1 }}
                       >
-                        {index === tutorialSteps.length - 1
-                          ? "Finish"
-                          : "Continue"}
+                        {index === tutorialSteps.length - 1 ? 'Finish' : 'Continue'}
                       </Button>
-                      <Button
-                        disabled={index === 0}
-                        onClick={handleBack}
-                        sx={{ mt: 1, mr: 1 }}
-                      >
+                      <Button disabled={index === 0} onClick={handleBack} sx={{ mt: 1, mr: 1 }}>
                         Back
                       </Button>
                     </div>
@@ -605,7 +573,7 @@ function Pomodoro() {
             ))}
           </Stepper>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: "space-between", px: 3, py: 2 }}>
+        <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
           <Button
             onClick={() => {
               setShowHelp(false);

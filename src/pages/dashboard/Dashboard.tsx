@@ -1,11 +1,9 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Grid,
   Paper,
   Typography,
   Box,
-  Card,
-  CardContent,
   List,
   ListItem,
   ListItemText,
@@ -20,7 +18,7 @@ import {
   DialogContent,
   DialogActions,
   Button,
-} from "@mui/material";
+} from '@mui/material';
 import {
   BarChart,
   Bar,
@@ -31,11 +29,11 @@ import {
   ResponsiveContainer,
   LineChart,
   Line,
-} from "recharts";
-import HelpIcon from "@mui/icons-material/Help";
-import useTaskStore from "../../store/taskStore";
-import usePomodoroStore from "../../store/pomodoroStore";
-import useRewardStore from "../../store/rewardStore";
+} from 'recharts';
+import HelpIcon from '@mui/icons-material/Help';
+import useTaskStore from '../../store/taskStore';
+import usePomodoroStore from '../../store/pomodoroStore';
+import useRewardStore from '../../store/rewardStore';
 
 function Dashboard() {
   const [showHelp, setShowHelp] = useState(false);
@@ -53,41 +51,47 @@ function Dashboard() {
 
   const tutorialSteps = [
     {
-      label: "Daily Concentration Streak",
+      label: 'Daily Concentration Streak',
       description:
-        "Maintain a daily concentration streak by completing at least 60 minutes of focused work each day. Your streak increases with each consecutive day you meet this goal.",
+        'Maintain a daily concentration streak by completing at least 60 minutes of focused work each day. Your streak increases with each consecutive day you meet this goal.',
     },
     {
-      label: "Streak Rewards",
+      label: 'Streak Rewards',
       description:
-        "Earn bonus points for maintaining your streak! 2 consecutive days = 20 points, 3 days = 30 points, and so on. The longer your streak, the more points you earn.",
+        'Earn bonus points for maintaining your streak! 2 consecutive days = 20 points, 3 days = 30 points, and so on. The longer your streak, the more points you earn.',
     },
     {
-      label: "Keeping Your Streak",
+      label: 'Keeping Your Streak',
       description:
-        "Your streak continues as long as you maintain at least 60 minutes of concentration each day. Missing a day or not reaching 60 minutes will reset your streak.",
+        'Your streak continues as long as you maintain at least 60 minutes of concentration each day. Missing a day or not reaching 60 minutes will reset your streak.',
     },
     {
-      label: "Tracking Progress",
+      label: 'Tracking Progress',
       description:
-        "Monitor your streak and daily concentration time in the Dashboard. The concentration chart shows your daily focus time, and the streak counter shows your current streak.",
+        'Monitor your streak and daily concentration time in the Dashboard. The concentration chart shows your daily focus time, and the streak counter shows your current streak.',
     },
   ];
 
   // Group completed tasks by date
-  const tasksByDate = completedTasks.reduce((acc, task) => {
-    const date = new Date(task.completedAt).toLocaleDateString();
-    acc[date] = (acc[date] || 0) + 1;
-    return acc;
-  }, {});
+  const tasksByDate = completedTasks.reduce(
+    (acc, task) => {
+      const date = new Date(task.completedAt ?? task.createdAt).toLocaleDateString();
+      acc[date] = (acc[date] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   // Group concentration time by date
-  const concentrationByDate = sessions.reduce((acc, session) => {
-    const date = new Date(session.startTime).toLocaleDateString();
-    const duration = Number(session.duration) || 0;
-    acc[date] = (acc[date] || 0) + duration;
-    return acc;
-  }, {});
+  const concentrationByDate = sessions.reduce(
+    (acc, session) => {
+      const date = new Date(session.startTime).toLocaleDateString();
+      const duration = Number(session.duration) || 0;
+      acc[date] = (acc[date] || 0) + duration;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
 
   // Convert to array format for the charts
   const taskChartData = Object.entries(tasksByDate)
@@ -95,7 +99,7 @@ function Dashboard() {
       date,
       count,
     }))
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(-7);
 
   const concentrationChartData = Object.entries(concentrationByDate)
@@ -104,7 +108,7 @@ function Dashboard() {
       minutes,
       hours: (minutes / 60).toFixed(1),
     }))
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     .slice(-7);
 
   const handleNext = () => {
@@ -121,7 +125,7 @@ function Dashboard() {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
         <Typography variant="h4">Dashboard</Typography>
         <Tooltip title="Help">
           <IconButton onClick={() => setShowHelp(true)}>
@@ -138,100 +142,83 @@ function Dashboard() {
               p: 3,
               background:
                 streakInfo.currentStreak >= 2
-                  ? "linear-gradient(135deg, #2a9d8f 0%, #1a6b61 100%)"
-                  : "linear-gradient(135deg, #2d3748 0%, #1a202c 100%)",
-              color: "white",
-              position: "relative",
-              overflow: "hidden",
-              "&::before": {
+                  ? 'linear-gradient(135deg, #2a9d8f 0%, #1a6b61 100%)'
+                  : 'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)',
+              color: 'white',
+              position: 'relative',
+              overflow: 'hidden',
+              '&::before': {
                 content: '""',
-                position: "absolute",
+                position: 'absolute',
                 top: 0,
                 left: 0,
                 right: 0,
                 bottom: 0,
                 background:
-                  "radial-gradient(circle at 100% 0%, rgba(255,255,255,0.15) 0%, transparent 50%)",
+                  'radial-gradient(circle at 100% 0%, rgba(255,255,255,0.15) 0%, transparent 50%)',
               },
             }}
           >
             <Grid container alignItems="center" spacing={2}>
               <Grid item xs={12} md={6}>
-                <Typography
-                  variant="h5"
-                  gutterBottom
-                  sx={{ color: "rgba(255,255,255,0.9)" }}
-                >
+                <Typography variant="h5" gutterBottom sx={{ color: 'rgba(255,255,255,0.9)' }}>
                   Concentration Streak
                 </Typography>
-                <Typography
-                  variant="h2"
-                  sx={{ fontWeight: "bold", mb: 1, color: "white" }}
-                >
-                  {streakInfo.currentStreak}{" "}
-                  {streakInfo.currentStreak === 1 ? "Day" : "Days"}
+                <Typography variant="h2" sx={{ fontWeight: 'bold', mb: 1, color: 'white' }}>
+                  {streakInfo.currentStreak} {streakInfo.currentStreak === 1 ? 'Day' : 'Days'}
                 </Typography>
                 {streakInfo.currentStreak >= 2 ? (
-                  <Typography
-                    variant="h6"
-                    sx={{ color: "rgba(255,255,255,0.9)" }}
-                  >
+                  <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)' }}>
                     Next Reward: {streakInfo.currentStreak * 10} Points
                   </Typography>
                 ) : (
-                  <Typography
-                    variant="body1"
-                    sx={{ color: "rgba(255,255,255,0.8)" }}
-                  >
-                    Complete 60 minutes of focused work today to start your
-                    streak!
+                  <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)' }}>
+                    Complete 60 minutes of focused work today to start your streak!
                   </Typography>
                 )}
               </Grid>
               <Grid item xs={12} md={6}>
                 <Box
                   sx={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    height: "100%",
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    height: '100%',
                   }}
                 >
                   <Box
                     sx={{
                       width: 120,
                       height: 120,
-                      borderRadius: "50%",
-                      border: "4px solid",
-                      borderColor:
-                        streakInfo.currentStreak >= 2 ? "#4fd1c5" : "#4a5568",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      position: "relative",
-                      "&::before": {
+                      borderRadius: '50%',
+                      border: '4px solid',
+                      borderColor: streakInfo.currentStreak >= 2 ? '#4fd1c5' : '#4a5568',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      position: 'relative',
+                      '&::before': {
                         content: '""',
-                        position: "absolute",
+                        position: 'absolute',
                         top: -4,
                         left: -4,
                         right: -4,
                         bottom: -4,
-                        borderRadius: "50%",
-                        border: "2px dashed",
+                        borderRadius: '50%',
+                        border: '2px dashed',
                         borderColor:
                           streakInfo.currentStreak >= 2
-                            ? "rgba(79,209,197,0.4)"
-                            : "rgba(255,255,255,0.2)",
-                        animation: "spin 20s linear infinite",
+                            ? 'rgba(79,209,197,0.4)'
+                            : 'rgba(255,255,255,0.2)',
+                        animation: 'spin 20s linear infinite',
                       },
                     }}
                   >
                     <Typography
                       variant="h3"
                       sx={{
-                        fontWeight: "bold",
-                        color:
-                          streakInfo.currentStreak >= 2 ? "#4fd1c5" : "white",
+                        fontWeight: 'bold',
+                        color: streakInfo.currentStreak >= 2 ? '#4fd1c5' : 'white',
                       }}
                     >
                       {streakInfo.currentStreak}
@@ -248,21 +235,17 @@ function Dashboard() {
           <Paper
             sx={{
               p: 2,
-              bgcolor: "background.paper",
-              "& .MuiTypography-root": {
-                color: "text.primary",
+              bgcolor: 'background.paper',
+              '& .MuiTypography-root': {
+                color: 'text.primary',
               },
             }}
           >
             <Typography variant="h6" gutterBottom>
               Task Overview
             </Typography>
-            <Typography variant="body1">
-              Completed Tasks: {completedTasks.length}
-            </Typography>
-            <Typography variant="body1">
-              Pending Tasks: {pendingTasks.length}
-            </Typography>
+            <Typography variant="body1">Completed Tasks: {completedTasks.length}</Typography>
+            <Typography variant="body1">Pending Tasks: {pendingTasks.length}</Typography>
           </Paper>
         </Grid>
 
@@ -271,9 +254,9 @@ function Dashboard() {
           <Paper
             sx={{
               p: 2,
-              bgcolor: "background.paper",
-              "& .MuiTypography-root": {
-                color: "text.primary",
+              bgcolor: 'background.paper',
+              '& .MuiTypography-root': {
+                color: 'text.primary',
               },
             }}
           >
@@ -289,9 +272,9 @@ function Dashboard() {
           <Paper
             sx={{
               p: 2,
-              bgcolor: "background.paper",
-              "& .MuiTypography-root": {
-                color: "text.primary",
+              bgcolor: 'background.paper',
+              '& .MuiTypography-root': {
+                color: 'text.primary',
               },
             }}
           >
@@ -305,11 +288,11 @@ function Dashboard() {
                     primary={
                       session.startTime
                         ? new Date(session.startTime).toLocaleDateString()
-                        : "Unknown date"
+                        : 'Unknown date'
                     }
                     secondary={`${session.type} session`}
-                    primaryTypographyProps={{ color: "text.primary" }}
-                    secondaryTypographyProps={{ color: "text.secondary" }}
+                    primaryTypographyProps={{ color: 'text.primary' }}
+                    secondaryTypographyProps={{ color: 'text.secondary' }}
                   />
                 </ListItem>
               ))}
@@ -322,9 +305,9 @@ function Dashboard() {
           <Paper
             sx={{
               p: 2,
-              bgcolor: "background.paper",
-              "& .MuiTypography-root": {
-                color: "text.primary",
+              bgcolor: 'background.paper',
+              '& .MuiTypography-root': {
+                color: 'text.primary',
               },
             }}
           >
@@ -334,29 +317,23 @@ function Dashboard() {
             <Box sx={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={taskChartData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(255,255,255,0.1)"
-                  />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 12, fill: "rgba(255,255,255,0.7)" }}
+                    tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.7)' }}
                     angle={-45}
                     textAnchor="end"
                     stroke="rgba(255,255,255,0.7)"
                   />
-                  <YAxis
-                    tick={{ fill: "rgba(255,255,255,0.7)" }}
-                    stroke="rgba(255,255,255,0.7)"
-                  />
+                  <YAxis tick={{ fill: 'rgba(255,255,255,0.7)' }} stroke="rgba(255,255,255,0.7)" />
                   <RechartsTooltip
-                    formatter={(value) => [`${value} tasks`, "Completed"]}
+                    formatter={(value) => [`${value} tasks`, 'Completed']}
                     labelFormatter={(label) => `Date: ${label}`}
                     contentStyle={{
-                      backgroundColor: "rgba(45, 55, 72, 0.95)",
-                      border: "none",
-                      borderRadius: "4px",
-                      color: "white",
+                      backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                      border: 'none',
+                      borderRadius: '4px',
+                      color: 'white',
                     }}
                   />
                   <Bar dataKey="count" fill="#4fd1c5" radius={[4, 4, 0, 0]} />
@@ -371,9 +348,9 @@ function Dashboard() {
           <Paper
             sx={{
               p: 2,
-              bgcolor: "background.paper",
-              "& .MuiTypography-root": {
-                color: "text.primary",
+              bgcolor: 'background.paper',
+              '& .MuiTypography-root': {
+                color: 'text.primary',
               },
             }}
           >
@@ -383,33 +360,27 @@ function Dashboard() {
             <Box sx={{ height: 300 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={concentrationChartData}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="rgba(255,255,255,0.1)"
-                  />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 12, fill: "rgba(255,255,255,0.7)" }}
+                    tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.7)' }}
                     angle={-45}
                     textAnchor="end"
                     stroke="rgba(255,255,255,0.7)"
                   />
                   <YAxis
                     tickFormatter={(value) => `${value}h`}
-                    tick={{ fill: "rgba(255,255,255,0.7)" }}
+                    tick={{ fill: 'rgba(255,255,255,0.7)' }}
                     stroke="rgba(255,255,255,0.7)"
                   />
                   <RechartsTooltip
-                    formatter={(value) => [
-                      `${value} hours`,
-                      "Concentration Time",
-                    ]}
+                    formatter={(value) => [`${value} hours`, 'Concentration Time']}
                     labelFormatter={(label) => `Date: ${label}`}
                     contentStyle={{
-                      backgroundColor: "rgba(45, 55, 72, 0.95)",
-                      border: "none",
-                      borderRadius: "4px",
-                      color: "white",
+                      backgroundColor: 'rgba(45, 55, 72, 0.95)',
+                      border: 'none',
+                      borderRadius: '4px',
+                      color: 'white',
                     }}
                   />
                   <Line
@@ -417,8 +388,8 @@ function Dashboard() {
                     dataKey="hours"
                     stroke="#4fd1c5"
                     strokeWidth={2}
-                    dot={{ fill: "#4fd1c5", strokeWidth: 2 }}
-                    activeDot={{ r: 8, fill: "#4fd1c5" }}
+                    dot={{ fill: '#4fd1c5', strokeWidth: 2 }}
+                    activeDot={{ r: 8, fill: '#4fd1c5' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -428,12 +399,7 @@ function Dashboard() {
       </Grid>
 
       {/* Streak Tutorial Dialog */}
-      <Dialog
-        open={showHelp}
-        onClose={() => setShowHelp(false)}
-        maxWidth="md"
-        fullWidth
-      >
+      <Dialog open={showHelp} onClose={() => setShowHelp(false)} maxWidth="md" fullWidth>
         <DialogTitle>Understanding the Streak System</DialogTitle>
         <DialogContent>
           <Stepper activeStep={activeStep} orientation="vertical">
@@ -456,15 +422,9 @@ function Dashboard() {
                         }
                         sx={{ mt: 1, mr: 1 }}
                       >
-                        {index === tutorialSteps.length - 1
-                          ? "Finish"
-                          : "Continue"}
+                        {index === tutorialSteps.length - 1 ? 'Finish' : 'Continue'}
                       </Button>
-                      <Button
-                        disabled={index === 0}
-                        onClick={handleBack}
-                        sx={{ mt: 1, mr: 1 }}
-                      >
+                      <Button disabled={index === 0} onClick={handleBack} sx={{ mt: 1, mr: 1 }}>
                         Back
                       </Button>
                     </div>
@@ -474,7 +434,7 @@ function Dashboard() {
             ))}
           </Stepper>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: "space-between", px: 3, py: 2 }}>
+        <DialogActions sx={{ justifyContent: 'space-between', px: 3, py: 2 }}>
           <Button
             onClick={() => {
               setShowHelp(false);

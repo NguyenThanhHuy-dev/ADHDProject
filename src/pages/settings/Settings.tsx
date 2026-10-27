@@ -62,18 +62,12 @@ function Settings() {
             <ListItemIcon>
               <VolumeUpIcon />
             </ListItemIcon>
-            <ListItemText 
-              primary="Sound Effects" 
+            <ListItemText
+              primary="Sound Effects"
               secondary="Enable or disable sound effects throughout the app"
             />
             <FormControlLabel
-              control={
-                <Switch
-                  checked={soundEnabled}
-                  onChange={toggleSound}
-                  color="primary"
-                />
-              }
+              control={<Switch checked={soundEnabled} onChange={toggleSound} color="primary" />}
               label=""
             />
           </ListItem>
@@ -82,8 +76,8 @@ function Settings() {
             <ListItemIcon>
               <NotificationsIcon />
             </ListItemIcon>
-            <ListItemText 
-              primary="Notifications" 
+            <ListItemText
+              primary="Notifications"
               secondary="Enable or disable notifications for tasks and breaks"
             />
             <FormControlLabel
@@ -102,18 +96,9 @@ function Settings() {
             <ListItemIcon>
               <DarkModeIcon />
             </ListItemIcon>
-            <ListItemText 
-              primary="Dark Mode" 
-              secondary="Switch between light and dark theme"
-            />
+            <ListItemText primary="Dark Mode" secondary="Switch between light and dark theme" />
             <FormControlLabel
-              control={
-                <Switch
-                  checked={darkMode}
-                  onChange={toggleDarkMode}
-                  color="primary"
-                />
-              }
+              control={<Switch checked={darkMode} onChange={toggleDarkMode} color="primary" />}
               label=""
             />
           </ListItem>
@@ -122,10 +107,7 @@ function Settings() {
             <ListItemIcon>
               <LanguageIcon />
             </ListItemIcon>
-            <ListItemText 
-              primary="Language" 
-              secondary="Change the app's language"
-            />
+            <ListItemText primary="Language" secondary="Change the app's language" />
             <Typography variant="body2" color="text.secondary">
               English
             </Typography>
@@ -139,24 +121,15 @@ function Settings() {
         </Typography>
         <List>
           <ListItem>
-            <ListItemText 
-              primary="Version" 
-              secondary="1.0.0"
-            />
+            <ListItemText primary="Version" secondary="1.0.0" />
           </ListItem>
           <Divider />
           <ListItem>
-            <ListItemText 
-              primary="Terms of Service" 
-              secondary="Read our terms of service"
-            />
+            <ListItemText primary="Terms of Service" secondary="Read our terms of service" />
           </ListItem>
           <Divider />
           <ListItem>
-            <ListItemText 
-              primary="Privacy Policy" 
-              secondary="Read our privacy policy"
-            />
+            <ListItemText primary="Privacy Policy" secondary="Read our privacy policy" />
           </ListItem>
         </List>
       </Paper>
@@ -164,4 +137,4 @@ function Settings() {
   );
 }
 
-export default Settings; 
+export default Settings;

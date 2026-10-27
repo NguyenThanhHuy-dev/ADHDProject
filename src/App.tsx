@@ -3,14 +3,6 @@ import { Routes, Route } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material';
 import CssBaseline from '@mui/material/CssBaseline';
 import useThemeStore from './store/themeStore';
-import {
-  Dashboard as DashboardIcon,
-  Timer as TimerIcon,
-  Assignment as AssignmentIcon,
-  CardGiftcard as RewardsIcon,
-  Person as ProfileIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
 
 // Pages
 import Dashboard from './pages/dashboard/Dashboard';
@@ -54,39 +46,6 @@ function App() {
     },
   });
 
-  const menuItems = [
-    {
-      text: 'Dashboard',
-      icon: <DashboardIcon />,
-      path: '/'
-    },
-    {
-      text: 'Pomodoro',
-      icon: <TimerIcon />,
-      path: '/pomodoro'
-    },
-    {
-      text: 'Tasks',
-      icon: <AssignmentIcon />,
-      path: '/tasks'
-    },
-    {
-      text: 'Rewards',
-      icon: <RewardsIcon />,
-      path: '/rewards'
-    },
-    {
-      text: 'Profile',
-      icon: <ProfileIcon />,
-      path: '/profile'
-    },
-    {
-      text: 'Settings',
-      icon: <SettingsIcon />,
-      path: '/settings'
-    }
-  ];
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -104,4 +63,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

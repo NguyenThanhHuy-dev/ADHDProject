@@ -37,4 +37,4 @@ const EisenhowerMatrix = () => {
   );
 };
 
-export default EisenhowerMatrix; 
+export default EisenhowerMatrix;

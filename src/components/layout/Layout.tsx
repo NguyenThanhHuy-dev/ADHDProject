@@ -1,46 +1,62 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { type ReactNode } from 'react';
 import {
-  AppBar,
   Box,
+  AppBar,
+  Toolbar,
+  Typography,
   Drawer,
-  IconButton,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Toolbar,
-  Typography,
+  IconButton,
 } from '@mui/material';
-import {
-  Menu as MenuIcon,
-  Dashboard as DashboardIcon,
-  Timer as TimerIcon,
-  Assignment as AssignmentIcon,
-  CardGiftcard as RewardsIcon,
-  Person as PersonIcon,
-  Settings as SettingsIcon,
-} from '@mui/icons-material';
+import { Menu as MenuIcon } from '@mui/icons-material';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const drawerWidth = 240;
 
-function Layout({ children }) {
+const Layout = ({ children }: { children: ReactNode }) => {
+  const [mobileOpen, setMobileOpen] = React.useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-
-  const menuItems = [
-    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Pomodoro', icon: <TimerIcon />, path: '/pomodoro' },
-    { text: 'Tasks', icon: <AssignmentIcon />, path: '/tasks' },
-    { text: 'Rewards', icon: <RewardsIcon />, path: '/rewards' },
-    { text: 'Profile', icon: <PersonIcon />, path: '/profile' },
-    { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },
-  ];
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
+
+  const menuItems = [
+    {
+      text: 'Dashboard',
+      icon: '📊',
+      path: '/',
+    },
+    {
+      text: 'Pomodoro',
+      icon: '⏰',
+      path: '/pomodoro',
+    },
+    {
+      text: 'Tasks',
+      icon: '✓',
+      path: '/tasks',
+    },
+    {
+      text: 'Rewards',
+      icon: '🎁',
+      path: '/rewards',
+    },
+    {
+      text: 'Profile',
+      icon: '👤',
+      path: '/profile',
+    },
+    {
+      text: 'Settings',
+      icon: '⚙️',
+      path: '/settings',
+    },
+  ];
 
   const drawer = (
     <div>
@@ -92,10 +108,7 @@ function Layout({ children }) {
           </Typography>
         </Toolbar>
       </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
+      <Box component="nav" sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}>
         <Drawer
           variant="temporary"
           open={mobileOpen}
@@ -105,10 +118,7 @@ function Layout({ children }) {
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-            },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           }}
         >
           {drawer}
@@ -117,10 +127,7 @@ function Layout({ children }) {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-            },
+            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
           }}
           open
         >
@@ -133,13 +140,13 @@ function Layout({ children }) {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
+          mt: '64px',
         }}
       >
-        <Toolbar />
         {children}
       </Box>
     </Box>
   );
-}
+};
 
-export default Layout; 
+export default Layout;

@@ -1,26 +1,6 @@
 import React from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  Paper,
-  List,
-  ListItem,
-  ListItemText,
-  Divider,
-} from '@mui/material';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-} from 'recharts';
+import { Box, Typography, Grid, Paper, List, ListItem, ListItemText, Divider } from '@mui/material';
+import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import useTaskStore from '../../store/taskStore';
 import usePomodoroStore from '../../store/pomodoroStore';
 import useRewardStore from '../../store/rewardStore';
@@ -35,22 +15,20 @@ function Profile() {
 
   // Calculate task completion statistics
   const completedTasks = tasks.filter((task) => task.completed);
-  const taskCompletionRate = tasks.length
-    ? (completedTasks.length / tasks.length) * 100
-    : 0;
+  const taskCompletionRate = tasks.length ? (completedTasks.length / tasks.length) * 100 : 0;
 
   // Calculate session statistics
   const totalSessions = sessions.length;
   const totalSessionTime = sessions.reduce((acc, session) => {
-  if (!session.startTime || !session.endTime) return acc;
+    if (!session.startTime || !session.endTime) return acc;
 
-  const start = new Date(session.startTime);
-  const end = new Date(session.endTime);
+    const start = new Date(session.startTime);
+    const end = new Date(session.endTime);
 
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) return acc;
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) return acc;
 
-  return acc + (end - start) / 1000 / 60;
-}, 0);
+    return acc + (end.getTime() - start.getTime()) / 1000 / 60;
+  }, 0);
 
   // Prepare chart data
   const taskChartData = [
@@ -80,10 +58,7 @@ function Profile() {
             </Typography>
             <List>
               <ListItem>
-                <ListItemText
-                  primary="Total Tasks"
-                  secondary={`${tasks.length} tasks`}
-                />
+                <ListItemText primary="Total Tasks" secondary={`${tasks.length} tasks`} />
               </ListItem>
               <Divider />
               <ListItem>
@@ -108,10 +83,7 @@ function Profile() {
               </ListItem>
               <Divider />
               <ListItem>
-                <ListItemText
-                  primary="Reward Points"
-                  secondary={`${points} points`}
-                />
+                <ListItemText primary="Reward Points" secondary={`${points} points`} />
               </ListItem>
             </List>
           </Paper>
@@ -134,15 +106,10 @@ function Profile() {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
                     {taskChartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -169,15 +136,10 @@ function Profile() {
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) =>
-                      `${name} ${(percent * 100).toFixed(0)}%`
-                    }
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                   >
                     {rewardChartData.map((entry, index) => (
-                      <Cell
-                        key={`cell-${index}`}
-                        fill={COLORS[index % COLORS.length]}
-                      />
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -191,4 +153,4 @@ function Profile() {
   );
 }
 
-export default Profile; 
+export default Profile;

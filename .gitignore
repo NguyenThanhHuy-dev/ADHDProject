@@ -17,6 +17,8 @@
 .env.development.local
 .env.test.local
 .env.production.local
+.env.*
+!.env.example
 
 # Debug logs
 npm-debug.log*
@@ -53,5 +55,5 @@ yarn-error.log*
 .parcel-cache/
 
 # Misc
-.DS_Store
-Thumbs.db 
+Thumbs.db
+*.log

@@ -1,5 +1,5 @@
 # Dependencies
-/node_modules
+node_modules
 /.pnp
 .pnp.js
 
@@ -57,3 +57,6 @@ yarn-error.log*
 # Misc
 Thumbs.db
 *.log
+
+# Server
+server/.env

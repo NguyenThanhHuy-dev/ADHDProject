@@ -21,6 +21,12 @@ src/
 └── main.tsx           # Entry point
 public/                # favicon, manifest, sounds
 docs/screenshots/      # Images used by README
+server/                # REST API (Fastify + Drizzle + PostgreSQL)
+├── src/routes/        # auth, tasks
+├── src/db/            # schema, client, migrate
+├── drizzle/           # generated SQL migrations
+└── test/              # API tests (in-memory Postgres)
+docker-compose.yml     # Postgres for local development
 ```
 
 Guidelines:

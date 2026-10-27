@@ -84,3 +84,20 @@ describe('auth', () => {
     expect(res.cookies.find((c) => c.name === 'adhd_token')?.value).toBe('');
   });
 });
+
+describe('rate limiting', () => {
+  it('blocks repeated login attempts outside test mode', async () => {
+    const prod = await createTestApp({}, 'production');
+    const attempt = () =>
+      prod.app.inject({
+        method: 'POST',
+        url: '/api/auth/login',
+        payload: { email: 'nobody@example.com', password: 'whatever123' },
+      });
+    const codes: number[] = [];
+    for (let i = 0; i < 12; i++) codes.push((await attempt()).statusCode);
+    expect(codes.slice(0, 10).every((c) => c === 401)).toBe(true);
+    expect(codes.slice(10)).toEqual([429, 429]);
+    await prod.close();
+  });
+});

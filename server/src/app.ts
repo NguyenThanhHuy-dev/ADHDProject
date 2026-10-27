@@ -7,7 +7,11 @@ import { ZodError } from 'zod';
 import type { Config } from './config';
 import { COOKIE_NAME } from './constants';
 import type { Db } from './db/types';
+import { randomInt } from 'node:crypto';
 import { authRoutes } from './routes/auth';
+import { pointRoutes } from './routes/points';
+import { rewardRoutes } from './routes/rewards';
+import { sessionRoutes } from './routes/sessions';
 import { taskRoutes } from './routes/tasks';
 
 declare module 'fastify' {
@@ -15,6 +19,9 @@ declare module 'fastify' {
     db: Db;
     config: Pick<Config, 'NODE_ENV' | 'CORS_ORIGIN' | 'JWT_SECRET'>;
     authenticate: (request: FastifyRequest) => Promise<void>;
+    /** Injected so tests can control time and randomness. */
+    now: () => Date;
+    random: () => number;
   }
 }
 
@@ -25,14 +32,24 @@ declare module '@fastify/jwt' {
   }
 }
 
+export interface AppDeps {
+  now?: () => Date;
+  random?: () => number;
+}
+
+const secureRandom = () => randomInt(0, 2 ** 32) / 2 ** 32;
+
 export const buildApp = async (
   db: Db,
   config: Pick<Config, 'NODE_ENV' | 'CORS_ORIGIN' | 'JWT_SECRET'>,
+  deps: AppDeps = {},
 ) => {
   const app = Fastify({ logger: config.NODE_ENV === 'development' });
 
   app.decorate('db', db);
   app.decorate('config', config);
+  app.decorate('now', deps.now ?? (() => new Date()));
+  app.decorate('random', deps.random ?? secureRandom);
 
   await app.register(cors, { origin: config.CORS_ORIGIN, credentials: true });
   await app.register(cookie);
@@ -59,6 +76,9 @@ export const buildApp = async (
   app.get('/api/health', async () => ({ status: 'ok' }));
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(taskRoutes, { prefix: '/api/tasks' });
+  await app.register(sessionRoutes, { prefix: '/api/sessions' });
+  await app.register(pointRoutes, { prefix: '/api/points' });
+  await app.register(rewardRoutes, { prefix: '/api/rewards' });
 
   return app;
 };

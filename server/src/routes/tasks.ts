@@ -2,6 +2,7 @@ import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { tasks } from '../db/schema';
+import { award, QUADRANT_POINTS } from '../domain/points';
 
 const quadrant = z.enum(['q1', 'q2', 'q3', 'q4']);
 
@@ -68,18 +69,26 @@ export const taskRoutes: FastifyPluginAsync = async (app) => {
     return task;
   });
 
-  // Idempotent: completing a finished task keeps the original completion time.
+  // Idempotent: completing a finished task keeps the original completion time and pays out only once.
   app.post('/:id/complete', async (request, reply) => {
     const { id } = idParams.parse(request.params);
-    const [updated] = await app.db
-      .update(tasks)
-      .set({ completedAt: new Date(), updatedAt: new Date() })
-      .where(and(owned(id, request.user.sub), isNull(tasks.completedAt)))
-      .returning();
-    if (updated) return updated;
-    const [existing] = await app.db.select().from(tasks).where(owned(id, request.user.sub));
-    if (!existing) return reply.status(404).send({ error: 'Task not found' });
-    return existing;
+    const userId = request.user.sub;
+    const result = await app.db.transaction(async (tx) => {
+      const [updated] = await tx
+        .update(tasks)
+        .set({ completedAt: app.now(), updatedAt: app.now() })
+        .where(and(owned(id, userId), isNull(tasks.completedAt)))
+        .returning();
+      if (updated) {
+        const pointsAwarded = QUADRANT_POINTS[updated.quadrant];
+        await award(tx, userId, pointsAwarded, 'task_complete', updated.id);
+        return { task: updated, pointsAwarded };
+      }
+      const [existing] = await tx.select().from(tasks).where(owned(id, userId));
+      return existing ? { task: existing, pointsAwarded: 0 } : null;
+    });
+    if (!result) return reply.status(404).send({ error: 'Task not found' });
+    return { ...result.task, pointsAwarded: result.pointsAwarded };
   });
 
   app.delete('/:id', async (request, reply) => {

@@ -10,11 +10,34 @@ const credentials = z.object({
   password: z.string().min(8).max(128),
 });
 
+const timezone = z.string().refine(
+  (tz) => {
+    try {
+      new Intl.DateTimeFormat('en-CA', { timeZone: tz });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  { message: 'Unknown IANA time zone' },
+);
+
 const registerBody = credentials.extend({
   displayName: z.string().trim().min(1).max(60).optional(),
+  timezone: timezone.optional(),
 });
 
-const publicUser = (u: User) => ({ id: u.id, email: u.email, displayName: u.displayName });
+const profileBody = z
+  .object({ displayName: z.string().trim().min(1).max(60), timezone })
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'Provide at least one field to update' });
+
+const publicUser = (u: User) => ({
+  id: u.id,
+  email: u.email,
+  displayName: u.displayName,
+  timezone: u.timezone,
+});
 
 // Verified against when the email is unknown, so login takes similar time either way.
 const DUMMY_HASH = await argon2.hash('not-a-real-password');
@@ -31,7 +54,12 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     });
   };
 
-  const limit = { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } };
+  // Brute-force guard. Tests create dozens of users from one address, so they are exempt.
+  const limit = {
+    config: {
+      rateLimit: { max: app.config.NODE_ENV === 'test' ? 10_000 : 10, timeWindow: '1 minute' },
+    },
+  };
 
   app.post('/register', limit, async (request, reply) => {
     const body = registerBody.parse(request.body);
@@ -47,6 +75,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
         email: body.email,
         passwordHash: await argon2.hash(body.password),
         displayName: body.displayName ?? body.email.split('@')[0],
+        timezone: body.timezone ?? 'UTC',
       })
       .returning();
     setSession(reply, user.id);
@@ -69,6 +98,17 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
 
   app.get('/me', { preHandler: app.authenticate }, async (request, reply) => {
     const [user] = await app.db.select().from(users).where(eq(users.id, request.user.sub));
+    if (!user) return reply.status(401).send({ error: 'Unauthorized' });
+    return publicUser(user);
+  });
+
+  app.patch('/me', { preHandler: app.authenticate }, async (request, reply) => {
+    const body = profileBody.parse(request.body);
+    const [user] = await app.db
+      .update(users)
+      .set(body)
+      .where(eq(users.id, request.user.sub))
+      .returning();
     if (!user) return reply.status(401).send({ error: 'Unauthorized' });
     return publicUser(user);
   });

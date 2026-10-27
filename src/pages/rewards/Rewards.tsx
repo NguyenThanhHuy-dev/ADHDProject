@@ -26,7 +26,7 @@ import {
 import useRewardStore from '../../store/rewardStore';
 import useSoundStore from '../../store/soundStore';
 import type { Rarity, Reward } from '../../types';
-import HelpIcon from '@mui/icons-material/Help';
+import { Help as HelpIcon } from '@mui/icons-material';
 
 const rarityColors: Record<Rarity, string> = {
   common: '#95a5a6',

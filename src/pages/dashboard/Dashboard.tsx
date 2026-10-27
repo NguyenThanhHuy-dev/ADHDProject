@@ -30,7 +30,7 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import HelpIcon from '@mui/icons-material/Help';
+import { Help as HelpIcon } from '@mui/icons-material';
 import useTaskStore from '../../store/taskStore';
 import usePomodoroStore from '../../store/pomodoroStore';
 import useRewardStore from '../../store/rewardStore';

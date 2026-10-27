@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import {
   Box,
+  Button,
   Drawer,
   IconButton,
   List,
@@ -20,9 +21,12 @@ import {
   PersonOutlineRounded as ProfileIcon,
   SettingsOutlined as SettingsIcon,
   BoltRounded as LogoIcon,
+  LogoutRounded as LogoutIcon,
 } from '@mui/icons-material';
 import { alpha } from '@mui/material/styles';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useLogout, useMe } from '../../api/hooks';
+import ImportBanner from '../ImportBanner';
 
 const drawerWidth = 248;
 
@@ -40,6 +44,8 @@ const Layout = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const theme = useTheme();
+  const { data: user } = useMe();
+  const logout = useLogout();
 
   const drawer = (
     <Box sx={{ px: 2, py: 2 }}>
@@ -93,6 +99,28 @@ const Layout = ({ children }: { children: ReactNode }) => {
           );
         })}
       </List>
+      <Box sx={{ mt: 3, pt: 2, borderTop: 1, borderColor: 'divider', px: 1 }}>
+        <Typography variant="body2" noWrap sx={{ fontWeight: 600 }}>
+          {user?.displayName}
+        </Typography>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          noWrap
+          sx={{ display: 'block', mb: 1 }}
+        >
+          {user?.email}
+        </Typography>
+        <Button
+          size="small"
+          color="inherit"
+          startIcon={<LogoutIcon fontSize="small" />}
+          onClick={() => logout.mutate()}
+          disabled={logout.isPending}
+        >
+          Sign out
+        </Button>
+      </Box>
     </Box>
   );
 
@@ -132,6 +160,7 @@ const Layout = ({ children }: { children: ReactNode }) => {
           </Typography>
         </Toolbar>
         <Box sx={{ maxWidth: 1120, mx: 'auto', px: { xs: 2, sm: 3, md: 4 }, py: { xs: 1, md: 4 } }}>
+          <ImportBanner />
           {children}
         </Box>
       </Box>

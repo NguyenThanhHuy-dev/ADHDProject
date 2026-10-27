@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
+  Alert,
   Box,
   Grid,
   Paper,
@@ -32,8 +33,13 @@ import {
   Check as CheckIcon,
   Help as HelpIcon,
 } from '@mui/icons-material';
-import useTaskStore from '../../store/taskStore';
-import useRewardStore from '../../store/rewardStore';
+import {
+  useCompleteTask,
+  useCreateTask,
+  useDeleteTask,
+  useTasks,
+  useUpdateTask,
+} from '../../api/hooks';
 import useSoundStore from '../../store/soundStore';
 import type { QuadrantId, Task } from '../../types';
 
@@ -58,12 +64,11 @@ function TaskList() {
   const [showHelp, setShowHelp] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
-  const tasks = useTaskStore((state) => state.tasks);
-  const addTask = useTaskStore((state) => state.addTask);
-  const updateTask = useTaskStore((state) => state.updateTask);
-  const deleteTask = useTaskStore((state) => state.deleteTask);
-  const completeTask = useTaskStore((state) => state.completeTask);
-  const addPoints = useRewardStore((state) => state.addPoints);
+  const { data: tasks = [], isError } = useTasks();
+  const createTask = useCreateTask();
+  const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
+  const completeTask = useCompleteTask();
   const playSound = useSoundStore((state) => state.playSound);
 
   const tutorialSteps = [
@@ -112,8 +117,8 @@ function TaskList() {
 
   const getDefaultDeadline = () => {
     const now = new Date();
-    now.setHours(23, 59, 0, 0);
-    return now.toISOString().split('T')[0];
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
   };
 
   const formatDateTime = (dateStr: string, timeStr: string) => {
@@ -131,14 +136,14 @@ function TaskList() {
   const handleOpen = (task: Task | null = null) => {
     if (task) {
       setEditingTask(task);
-      const taskDate = task.dueDate ? new Date(task.dueDate) : null;
+      const [dueDate = '', dueTime = '23:59'] = task.dueDate ? task.dueDate.split('T') : [];
       setTaskForm({
         title: task.title,
         description: task.description,
         isImportant: task.quadrant === 'q1' || task.quadrant === 'q2',
         isUrgent: task.quadrant === 'q1' || task.quadrant === 'q3',
-        dueDate: taskDate ? taskDate.toISOString().split('T')[0] : '',
-        dueTime: taskDate ? taskDate.toTimeString().slice(0, 5) : '23:59',
+        dueDate,
+        dueTime,
       });
     } else {
       setEditingTask(null);
@@ -165,33 +170,29 @@ function TaskList() {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { isImportant, isUrgent, dueTime, ...fields } = taskForm;
     const taskData = {
-      ...fields,
+      title: fields.title,
+      description: fields.description,
       quadrant,
       dueDate: taskForm.dueDate && dueTime ? `${taskForm.dueDate}T${dueTime}` : null,
     };
 
     if (editingTask) {
-      updateTask(editingTask.id, taskData);
+      updateTask.mutate({ id: editingTask.id, ...taskData });
       playSound('notification');
     } else {
-      addTask(taskData);
+      createTask.mutate(taskData);
       playSound('start');
     }
     handleClose();
   };
 
-  const handleTaskComplete = (taskId: number) => {
-    const task = tasks.find((t) => t.id === taskId);
-    if (task) {
-      const quadrant = quadrants.find((q) => q.id === task.quadrant);
-      completeTask(taskId);
-      addPoints(quadrant!.points);
-      playSound('complete');
-    }
+  // Points are paid by the server when the completion is recorded.
+  const handleTaskComplete = (taskId: string) => {
+    completeTask.mutate(taskId, { onSuccess: () => playSound('complete') });
   };
 
-  const handleDeleteTask = (taskId: number) => {
-    deleteTask(taskId);
+  const handleDeleteTask = (taskId: string) => {
+    deleteTask.mutate(taskId);
     playSound('notification');
   };
 
@@ -209,28 +210,6 @@ function TaskList() {
   const handleReset = () => {
     setActiveStep(0);
   };
-
-  const checkOverdueTasks = () => {
-    const now = new Date();
-    tasks.forEach((task) => {
-      if (!task.completed && task.dueDate) {
-        const dueDate = new Date(task.dueDate);
-        if (dueDate < now) {
-          const quadrant = quadrants.find((q) => q.id === task.quadrant);
-          addPoints(-quadrant!.points);
-          completeTask(task.id);
-          playSound('notification');
-        }
-      }
-    });
-  };
-
-  useEffect(() => {
-    checkOverdueTasks();
-    const interval = setInterval(checkOverdueTasks, 3600000);
-    return () => clearInterval(interval);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- shortcut: checkOverdueTasks is recreated each render, re-run on tasks only
-  }, [tasks]);
 
   return (
     <Box>
@@ -261,6 +240,12 @@ function TaskList() {
           </Button>
         </Box>
       </Box>
+
+      {isError && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          Could not load your tasks. Is the server running?
+        </Alert>
+      )}
 
       <Grid container spacing={3}>
         {quadrants.map((quadrant) => (
@@ -341,10 +326,12 @@ function TaskList() {
                               <Typography
                                 component="span"
                                 variant="body2"
-                                color="text.secondary"
+                                color={
+                                  new Date(task.dueDate) < new Date() ? 'error' : 'text.secondary'
+                                }
                                 sx={{ display: 'block', mt: 0.5 }}
                               >
-                                Due:{' '}
+                                {new Date(task.dueDate) < new Date() ? 'Overdue: ' : 'Due: '}
                                 {formatDateTime(
                                   task.dueDate.split('T')[0],
                                   task.dueDate.split('T')[1],
@@ -532,7 +519,7 @@ function TaskList() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={!taskForm.title}>
+          <Button onClick={handleSubmit} variant="contained" disabled={!taskForm.title.trim()}>
             {editingTask ? 'Update' : 'Add'}
           </Button>
         </DialogActions>

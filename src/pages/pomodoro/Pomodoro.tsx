@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
+  Alert,
+  Snackbar,
   Box,
   Typography,
   Button,
@@ -28,10 +30,14 @@ import {
   Restore as RestoreIcon,
   Help as HelpIcon,
 } from '@mui/icons-material';
-import usePomodoroStore from '../../store/pomodoroStore';
-import useRewardStore from '../../store/rewardStore';
+import {
+  useCancelSession,
+  useCompleteSession,
+  useSessions,
+  useStartSession,
+  useTasks,
+} from '../../api/hooks';
 import useSoundStore from '../../store/soundStore';
-import useTaskStore from '../../store/taskStore';
 
 const POMODORO_DURATIONS = [15, 25, 45, 60, 90, 120];
 const BREAK_DURATIONS = [5, 10, 15];
@@ -64,17 +70,24 @@ function Pomodoro() {
   const [workTime, setWorkTime] = useState(DEFAULT_WORK_TIME);
   const [breakTime, setBreakTime] = useState(DEFAULT_BREAK_TIME);
   const [totalTime, setTotalTime] = useState(DEFAULT_WORK_TIME * 60);
-  const [selectedTask, setSelectedTask] = useState<number | ''>('');
+  const [selectedTask, setSelectedTask] = useState<string>('');
   const endAtRef = useRef(0);
+  // The server-side session behind the running timer; null while idle, paused-before-start or on a break.
+  const sessionIdRef = useRef<string | null>(null);
+  const [toast, setToast] = useState<{ severity: 'success' | 'error'; message: string } | null>(
+    null,
+  );
   const progressRef = useRef<SVGCircleElement>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
   const [backgroundColor, setBackgroundColor] = useState(DURATION_COLORS[DEFAULT_WORK_TIME]);
 
-  const tasks = useTaskStore((state) => state.tasks);
+  const { data: tasks = [] } = useTasks();
   const pendingTasks = tasks.filter((task) => !task.completed);
-  const addSession = usePomodoroStore((state) => state.addSession);
-  const addPoints = useRewardStore((state) => state.addPoints);
+  const { data: sessions = [] } = useSessions();
+  const startSession = useStartSession();
+  const completeSession = useCompleteSession();
+  const cancelSession = useCancelSession();
   const playSound = useSoundStore((state) => state.playSound);
 
   const tutorialSteps = [
@@ -121,7 +134,7 @@ function Pomodoro() {
     }
   }, [timeLeft, totalTime]);
 
-  const handleTaskSelect = (taskId: number | '') => {
+  const handleTaskSelect = (taskId: string) => {
     setSelectedTask(taskId);
     const task = tasks.find((t) => t.id === taskId);
     if (task && !isRunning) {
@@ -157,12 +170,32 @@ function Pomodoro() {
     } else {
       playSound('notification');
     }
-    if (!isRunning) endAtRef.current = Date.now() + timeLeft * 1000;
+    if (!isRunning) {
+      endAtRef.current = Date.now() + timeLeft * 1000;
+      if (isWorkMode && !sessionIdRef.current) {
+        startSession.mutate(
+          { taskId: selectedTask || null, plannedMinutes: workTime },
+          {
+            onSuccess: (session) => (sessionIdRef.current = session.id),
+            onError: (error) => {
+              setIsRunning(false);
+              setToast({ severity: 'error', message: error.message });
+            },
+          },
+        );
+      }
+    }
     setIsRunning(!isRunning);
+  };
+
+  const cancelActiveSession = () => {
+    if (sessionIdRef.current) cancelSession.mutate(sessionIdRef.current);
+    sessionIdRef.current = null;
   };
 
   const handleReset = () => {
     playSound('notification');
+    cancelActiveSession();
     setIsRunning(false);
     setTimeLeft(isWorkMode ? workTime * 60 : breakTime * 60);
     setTotalTime(isWorkMode ? workTime * 60 : breakTime * 60);
@@ -175,18 +208,21 @@ function Pomodoro() {
   const handleTimerComplete = () => {
     setIsRunning(false);
     if (isWorkMode) {
-      const now = new Date();
-      const start = now.getTime() - workTime * 60 * 1000;
-      addSession({
-        id: Date.now(),
-        taskId: selectedTask,
-        startTime: new Date(start).toISOString(),
-        endTime: now.toISOString(),
-        duration: Number(workTime) || 0,
-        type: 'work',
-        completed: true,
-      });
-      addPoints(10);
+      // The server checks the elapsed time itself, records the session and pays the points.
+      const id = sessionIdRef.current;
+      sessionIdRef.current = null;
+      if (id) {
+        completeSession.mutate(id, {
+          onSuccess: (result) =>
+            setToast({
+              severity: 'success',
+              message: result.pointsAwarded
+                ? `Session complete: +${result.pointsAwarded} points`
+                : 'Session complete',
+            }),
+          onError: (error) => setToast({ severity: 'error', message: error.message }),
+        });
+      }
       playSound('complete');
       setTimeLeft(breakTime * 60);
       setTotalTime(breakTime * 60);
@@ -210,6 +246,7 @@ function Pomodoro() {
   }, [isRunning, timeLeft]);
 
   const handleSettingsSave = () => {
+    cancelActiveSession();
     setTimeLeft(workTime * 60);
     setTotalTime(workTime * 60);
     setShowSettings(false);
@@ -220,6 +257,7 @@ function Pomodoro() {
   };
 
   const handleResetToDefault = () => {
+    cancelActiveSession();
     setWorkTime(DEFAULT_WORK_TIME);
     setBreakTime(DEFAULT_BREAK_TIME);
     setBackgroundColor(DURATION_COLORS[DEFAULT_WORK_TIME]);
@@ -363,7 +401,7 @@ function Pomodoro() {
                 <Select
                   value={selectedTask}
                   label="Select Task"
-                  onChange={(e) => handleTaskSelect(e.target.value as number | '')}
+                  onChange={(e) => handleTaskSelect(e.target.value)}
                   disabled={isRunning}
                 >
                   {pendingTasks.map((task) => (
@@ -434,18 +472,14 @@ function Pomodoro() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Sessions Completed
                 </Typography>
-                <Typography variant="h4">{usePomodoroStore.getState().sessions.length}</Typography>
+                <Typography variant="h4">{sessions.length}</Typography>
               </Grid>
               <Grid item xs={6}>
                 <Typography variant="subtitle2" color="text.secondary">
                   Total Focus Time
                 </Typography>
                 <Typography variant="h4">
-                  {usePomodoroStore.getState().sessions.reduce((acc, session) => {
-                    const d = Number(session.duration);
-                    return acc + (isNaN(d) ? 0 : d);
-                  }, 0)}
-                  m
+                  {sessions.reduce((acc, session) => acc + session.duration, 0)}m
                 </Typography>
               </Grid>
             </Grid>
@@ -617,6 +651,20 @@ function Pomodoro() {
           </Button>
         </DialogActions>
       </Dialog>
+      <Snackbar
+        open={toast !== null}
+        autoHideDuration={5000}
+        onClose={() => setToast(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert
+          severity={toast?.severity ?? 'success'}
+          onClose={() => setToast(null)}
+          variant="filled"
+        >
+          {toast?.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

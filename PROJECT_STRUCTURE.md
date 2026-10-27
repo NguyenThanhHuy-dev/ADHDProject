@@ -7,13 +7,15 @@ src/
 │   ├── StatCard.tsx   # KPI card used by Dashboard and Profile
 │   └── DonutCard.tsx  # Donut chart card used by Profile
 ├── pages/             # One folder per route
+│   ├── auth/          # sign-in and registration
 │   ├── dashboard/
 │   ├── pomodoro/      # includes Pomodoro.test.tsx
 │   ├── tasks/
 │   ├── rewards/
 │   ├── profile/
 │   └── settings/
-├── store/             # Zustand stores (+ __tests__/)
+├── api/               # fetch client, React Query hooks, mappers, legacy import
+├── store/             # Zustand stores for UI-only state (theme, sound, notifications)
 ├── test/setup.ts      # Vitest setup (jsdom polyfills)
 ├── theme.ts           # MUI theme (light and dark)
 ├── types.ts           # Shared domain types
@@ -33,7 +35,7 @@ docker-compose.yml     # Postgres for local development
 Guidelines:
 
 - Page-specific components stay in the page folder; shared ones go in `components/`.
-- State lives in Zustand stores; persisted stores use `localStorage` (`*-storage` keys).
+- Server data goes through the hooks in `src/api/hooks.ts` (React Query); Zustand only holds UI preferences.
 - Domain types are defined once in `src/types.ts`.
-- Tests sit next to the code they cover (`*.test.ts(x)`), or in `__tests__/` for stores.
+- Tests sit next to the code they cover (`*.test.ts(x)`); web tests fake `fetch` with `src/test/mockApi.tsx`.
 - Static images go in `src/assets/`. The images there are not referenced by any page yet.

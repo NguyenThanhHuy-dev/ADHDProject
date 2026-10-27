@@ -8,15 +8,21 @@ import {
 } from '@mui/icons-material';
 import StatCard from '../../components/StatCard';
 import DonutCard from '../../components/DonutCard';
-import useTaskStore from '../../store/taskStore';
-import usePomodoroStore from '../../store/pomodoroStore';
-import useRewardStore from '../../store/rewardStore';
+import { useInventory, usePoints, useSessions, useTasks } from '../../api/hooks';
+import type { Rarity } from '../../types';
 
 function Profile() {
-  const tasks = useTaskStore((state) => state.tasks);
-  const sessions = usePomodoroStore((state) => state.sessions);
-  const points = useRewardStore((state) => state.points);
-  const rarityDistribution = useRewardStore((state) => state.getRarityDistribution());
+  const { data: tasks = [] } = useTasks();
+  const { data: sessions = [] } = useSessions();
+  const { data: inventory = [] } = useInventory();
+  const points = usePoints().data?.balance ?? 0;
+  const countRarity = (rarity: Rarity) => inventory.filter((item) => item.rarity === rarity).length;
+  const rarityDistribution = {
+    common: countRarity('common'),
+    rare: countRarity('rare'),
+    epic: countRarity('epic'),
+    legendary: countRarity('legendary'),
+  };
 
   // Calculate task completion statistics
   const completedTasks = tasks.filter((task) => task.completed);
@@ -24,16 +30,7 @@ function Profile() {
 
   // Calculate session statistics
   const totalSessions = sessions.length;
-  const totalSessionTime = sessions.reduce((acc, session) => {
-    if (!session.startTime || !session.endTime) return acc;
-
-    const start = new Date(session.startTime);
-    const end = new Date(session.endTime);
-
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) return acc;
-
-    return acc + (end.getTime() - start.getTime()) / 1000 / 60;
-  }, 0);
+  const totalSessionTime = sessions.reduce((acc, session) => acc + session.duration, 0);
 
   // Prepare chart data
   const taskChartData = [

@@ -170,3 +170,43 @@ describe('tasks', () => {
     ).toBe(400);
   });
 });
+
+describe('import', () => {
+  it('imports tasks without paying any points', async () => {
+    const cookie = (await registerUser(app, 'importer@example.com')).cookie;
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/import',
+      headers: { cookie },
+      payload: {
+        tasks: [
+          { title: 'Old open task', quadrant: 'q2', dueAt: '2030-01-01T00:00:00Z' },
+          { title: 'Old done task', quadrant: 'q1', completedAt: '2029-12-01T00:00:00Z' },
+        ],
+      },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toEqual({ imported: 2 });
+    const done = await app.inject({
+      method: 'GET',
+      url: '/api/tasks?status=done',
+      headers: { cookie },
+    });
+    expect(done.json()).toHaveLength(1);
+    const points = await app.inject({ method: 'GET', url: '/api/points', headers: { cookie } });
+    expect(points.json().balance).toBe(0);
+  });
+
+  it('rejects oversized or malformed payloads and anonymous callers', async () => {
+    const cookie = (await registerUser(app, 'importer2@example.com')).cookie;
+    const bad = await app.inject({
+      method: 'POST',
+      url: '/api/import',
+      headers: { cookie },
+      payload: { tasks: [{ title: '', quadrant: 'q9' }] },
+    });
+    expect(bad.statusCode).toBe(400);
+    const anon = await app.inject({ method: 'POST', url: '/api/import', payload: { tasks: [] } });
+    expect(anon.statusCode).toBe(401);
+  });
+});

@@ -1,9 +1,9 @@
 # ADHD Focus App
 
 Task and focus tool for people with ADHD: Pomodoro timer, Eisenhower-matrix task list,
-daily focus streaks and a gacha-style reward system. Data stays in the browser (`localStorage`).
+daily focus streaks and a gacha-style reward system. Accounts and data live in PostgreSQL.
 
-**Stack:** React 18, TypeScript, Vite, MUI, Zustand, Recharts, Vitest, ESLint, Prettier. Backend: Node, Fastify, PostgreSQL, Drizzle ORM, Zod.
+**Stack:** React 18, TypeScript, Vite, MUI, TanStack Query, Zustand, Recharts, Vitest, ESLint, Prettier. Backend: Node, Fastify, PostgreSQL, Drizzle ORM, Zod.
 
 ## Screenshots
 
@@ -31,10 +31,18 @@ daily focus streaks and a gacha-style reward system. Data stays in the browser (
 
 ## Getting started
 
+The app needs the API and its database. Three terminals (or one after another in the background):
+
 ```bash
 npm install
-npm run dev        # http://localhost:5173
+cp server/.env.example server/.env   # set JWT_SECRET to a long random string
+npm run db:up                        # PostgreSQL 16 in Docker, port 5433
+npm run db:migrate                   # create the tables
+npm run dev:server                   # API on http://localhost:3001
+npm run dev                          # web on http://localhost:5173 (proxies /api to the API)
 ```
+
+Create an account on the sign-in screen. Tasks saved in the browser before accounts existed can be imported from the banner on first sign-in (points and rewards are not imported: they only come from server-verified activity).
 
 | Script              | Purpose                      |
 | ------------------- | ---------------------------- |
@@ -51,16 +59,12 @@ See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for the folder layout.
 
 Import the repo in Vercel (framework preset: Vite). `vercel.json` rewrites all routes to `index.html` for client-side routing.
 
-## Backend (work in progress)
+## Backend
 
-`server/` is a REST API with PostgreSQL. The web app still uses `localStorage`; switching it to the API is the next step.
+`server/` is a REST API with PostgreSQL; the web app talks to it with TanStack Query.
 
 ```bash
-cp server/.env.example server/.env   # set JWT_SECRET for anything beyond local dev
-npm run db:up                        # Postgres 16 in Docker on port 5433
-npm run db:migrate                   # apply migrations
-npm run dev:server                   # API on http://localhost:3001
-npm run test:server                  # API tests (in-memory Postgres, no Docker needed)
+npm run test:server   # API tests (in-memory Postgres, no Docker needed)
 ```
 
 | Method     | Endpoint                                         | Purpose                                                                                                          |
@@ -88,12 +92,6 @@ npm run test:server                  # API tests (in-memory Postgres, no Docker 
 - A streak day needs 60 focus minutes in the user's own time zone. A shorter day does not reset an existing streak; missing a whole day does. From day 2 the day that reaches the goal pays `streak x 10` bonus points.
 
 Schema lives in `server/src/db/schema.ts`; after changing it run `npx drizzle-kit generate` inside `server/`. Passwords are hashed with argon2id, every task query is scoped to the signed-in user, and `/auth/register` and `/auth/login` are rate limited.
-
-## Debug helpers (browser console)
-
-```js
-localStorage.removeItem('reward-storage'); // reset points and inventory
-```
 
 ## License
 

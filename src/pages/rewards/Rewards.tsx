@@ -24,7 +24,7 @@ import {
   StepLabel,
   StepContent,
 } from '@mui/material';
-import useRewardStore from '../../store/rewardStore';
+import { useCatalog, useGacha, useInventory, usePoints } from '../../api/hooks';
 import useSoundStore from '../../store/soundStore';
 import type { Rarity, Reward } from '../../types';
 import { Help as HelpIcon } from '@mui/icons-material';
@@ -36,79 +36,15 @@ const rarityColors: Record<Rarity, string> = {
   legendary: '#f1c40f',
 };
 
-const rarityProbabilities: Record<Rarity, number> = {
-  common: 0.6,
-  rare: 0.3,
-  epic: 0.08,
-  legendary: 0.02,
-};
-
-const rewards: Reward[] = [
-  {
-    id: 1,
-    name: 'Common Reward 1',
-    description: 'A basic reward',
-    rarity: 'common',
-    image: '🎁',
-  },
-  {
-    id: 2,
-    name: 'Common Reward 2',
-    description: 'Another basic reward',
-    rarity: 'common',
-    image: '🎯',
-  },
-  {
-    id: 3,
-    name: 'Rare Reward 1',
-    description: 'A special reward',
-    rarity: 'rare',
-    image: '🏆',
-  },
-  {
-    id: 4,
-    name: 'Rare Reward 2',
-    description: 'Another special reward',
-    rarity: 'rare',
-    image: '🎨',
-  },
-  {
-    id: 5,
-    name: 'Epic Reward 1',
-    description: 'An amazing reward',
-    rarity: 'epic',
-    image: '🌟',
-  },
-  {
-    id: 6,
-    name: 'Epic Reward 2',
-    description: 'Another amazing reward',
-    rarity: 'epic',
-    image: '💫',
-  },
-  {
-    id: 7,
-    name: 'Legendary Reward 1',
-    description: 'An incredible reward',
-    rarity: 'legendary',
-    image: '👑',
-  },
-  {
-    id: 8,
-    name: 'Legendary Reward 2',
-    description: 'Another incredible reward',
-    rarity: 'legendary',
-    image: '🏰',
-  },
-];
-
 function Rewards() {
   const [open, setOpen] = useState(false);
   const [currentReward, setCurrentReward] = useState<Reward | null>(null);
-  const points = useRewardStore((state) => state.points);
-  const inventory = useRewardStore((state) => state.inventory);
-  const spendPoints = useRewardStore((state) => state.spendPoints);
-  const addToInventory = useRewardStore((state) => state.addToInventory);
+  const points = usePoints().data?.balance ?? 0;
+  const { data: inventory = [] } = useInventory();
+  const { data: catalog } = useCatalog();
+  const rewards = catalog?.rewards ?? [];
+  const cost = catalog?.cost ?? 30;
+  const gacha = useGacha();
   const playSound = useSoundStore((state) => state.playSound);
   const [showHelp, setShowHelp] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
@@ -141,39 +77,16 @@ function Rewards() {
     },
   ];
 
-  const getRandomReward = () => {
-    const random = Math.random();
-    let cumulativeProbability = 0;
-    let selectedRarity: Rarity | undefined;
-
-    for (const [rarity, probability] of Object.entries(rarityProbabilities) as [Rarity, number][]) {
-      cumulativeProbability += probability;
-      if (random <= cumulativeProbability) {
-        selectedRarity = rarity;
-        break;
-      }
-    }
-
-    const availableRewards = rewards.filter((reward) => reward.rarity === selectedRarity);
-    if (availableRewards.length === 0) return null;
-    return availableRewards[Math.floor(Math.random() * availableRewards.length)];
-  };
-
+  // The server rolls the reward and charges the points; the client only shows the result.
   const handleGacha = () => {
-    if (points >= 30) {
-      const reward = getRandomReward();
-      if (!reward) {
-        playSound('notification');
-        return;
-      }
-      setCurrentReward(reward);
-      setOpen(true);
-      spendPoints(30);
-      addToInventory(reward);
-      playSound('reward');
-    } else {
-      playSound('notification');
-    }
+    gacha.mutate(undefined, {
+      onSuccess: ({ reward }) => {
+        setCurrentReward(reward);
+        setOpen(true);
+        playSound('reward');
+      },
+      onError: () => playSound('notification'),
+    });
   };
 
   const handleCloseDialog = () => {
@@ -232,7 +145,7 @@ function Rewards() {
           </Typography>
           <LinearProgress
             variant="determinate"
-            value={Math.min(100, (points / 30) * 100)}
+            value={Math.min(100, (points / cost) * 100)}
             aria-label="Progress to next try"
             sx={{
               mt: 1.5,
@@ -243,16 +156,16 @@ function Rewards() {
             }}
           />
           <Typography variant="body2" sx={{ mt: 1, opacity: 0.9 }}>
-            {points >= 30
+            {points >= cost
               ? 'You can try your luck now.'
-              : `${30 - points} more points for your next try.`}
+              : `${cost - points} more points for your next try.`}
           </Typography>
         </Box>
         <Button
           variant="contained"
           size="large"
           onClick={handleGacha}
-          disabled={points < 30}
+          disabled={points < cost || gacha.isPending}
           sx={{
             bgcolor: '#fff',
             color: '#c2410c',
@@ -261,7 +174,7 @@ function Rewards() {
             '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.35)', color: 'rgba(255,255,255,0.8)' },
           }}
         >
-          Try your luck (30 points)
+          Try your luck ({cost} points)
         </Button>
       </Paper>
 
@@ -272,8 +185,8 @@ function Rewards() {
               Your Inventory
             </Typography>
             <List>
-              {inventory.map((item, index) => (
-                <ListItem key={index}>
+              {inventory.map((item) => (
+                <ListItem key={item.inventoryId}>
                   <ListItemAvatar>
                     <Avatar
                       sx={{

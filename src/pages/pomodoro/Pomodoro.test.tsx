@@ -1,65 +1,92 @@
-import { act, render, screen, within } from '@testing-library/react';
+import { act, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StrictMode } from 'react';
-import { MemoryRouter } from 'react-router-dom';
 import Pomodoro from './Pomodoro';
-import usePomodoroStore from '../../store/pomodoroStore';
-import useRewardStore from '../../store/rewardStore';
-import useTaskStore from '../../store/taskStore';
+import { emptyAccount, mockApi, renderWithProviders } from '../../test/mockApi';
 
-beforeEach(() => {
-  vi.useFakeTimers({ shouldAdvanceTime: true });
-  localStorage.clear();
-  usePomodoroStore.setState({ sessions: [], currentSession: null });
-  useRewardStore.setState({ points: 0 });
-  useTaskStore.setState({
-    tasks: [
-      {
-        id: 1,
-        title: 'Write report',
-        description: '',
-        quadrant: 'q1',
-        dueDate: null,
-        completed: false,
-        createdAt: new Date().toISOString(),
-      },
-    ],
-  });
+const task = {
+  id: 't1',
+  title: 'Write report',
+  description: '',
+  quadrant: 'q1',
+  dueAt: null,
+  completedAt: null,
+  createdAt: '2030-01-01T00:00:00.000Z',
+};
+
+const routes = () => ({
+  ...emptyAccount,
+  'GET /tasks': { body: [task] },
+  'POST /sessions/start': { status: 201, body: { id: 's1' } },
+  'POST /sessions/:id/complete': {
+    body: { alreadyCompleted: false, pointsAwarded: 10, balance: 10, streak: 0 },
+  },
+  'POST /sessions/:id/cancel': { body: { id: 's1', status: 'abandoned' } },
 });
 
+beforeEach(() => vi.useFakeTimers({ shouldAdvanceTime: true }));
 afterEach(() => vi.useRealTimers());
 
+const pickTaskAndStart = async (user: ReturnType<typeof userEvent.setup>) => {
+  await user.click(screen.getAllByRole('combobox')[0]);
+  await user.click(within(await screen.findByRole('listbox')).getByText(/Write report/));
+  await user.click(screen.getByRole('button', { name: /start/i }));
+};
+
 describe('Pomodoro timer', () => {
-  it('records exactly one session and 10 points when a work session ends, even in StrictMode', async () => {
+  it('starts one server session, completes it exactly once and shows the payout, even in StrictMode', async () => {
+    const api = mockApi(routes());
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
-    render(
+    renderWithProviders(
       <StrictMode>
-        <MemoryRouter>
-          <Pomodoro />
-        </MemoryRouter>
+        <Pomodoro />
       </StrictMode>,
     );
 
-    await user.click(screen.getAllByRole('combobox')[0]);
-    await user.click(within(await screen.findByRole('listbox')).getByText(/Write report/));
-    await user.click(screen.getByRole('button', { name: /start/i }));
+    await pickTaskAndStart(user);
+    await waitFor(() => expect(api.count('POST', '/sessions/start')).toBe(1));
+    expect(api.calls.find((c) => c.path === '/sessions/start')?.body).toEqual({
+      taskId: 't1',
+      plannedMinutes: 25,
+    });
 
     await act(async () => {
       await vi.advanceTimersByTimeAsync(25 * 60 * 1000 + 1000);
     });
 
-    expect(usePomodoroStore.getState().sessions).toHaveLength(1);
-    expect(useRewardStore.getState().points).toBe(10);
+    await waitFor(() => expect(api.count('POST', '/sessions/s1/complete')).toBe(1));
+    expect(await screen.findByText('Session complete: +10 points')).toBeInTheDocument();
     expect(await screen.findByText('Break Time')).toBeInTheDocument();
   });
 
-  it('keeps Start disabled until a task is selected', () => {
-    render(
-      <MemoryRouter>
-        <Pomodoro />
-      </MemoryRouter>,
-    );
+  it('cancels the server session when the timer is reset', async () => {
+    const api = mockApi(routes());
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderWithProviders(<Pomodoro />);
+
+    await pickTaskAndStart(user);
+    await waitFor(() => expect(api.count('POST', '/sessions/start')).toBe(1));
+    await user.click(screen.getByRole('button', { name: /reset/i }));
+    await waitFor(() => expect(api.count('POST', '/sessions/s1/cancel')).toBe(1));
+    expect(api.count('POST', '/sessions/s1/complete')).toBe(0);
+  });
+
+  it('keeps Start disabled until a task is selected', async () => {
+    mockApi(routes());
+    renderWithProviders(<Pomodoro />);
     expect(screen.getByRole('button', { name: /start/i })).toBeDisabled();
     expect(screen.getByText('25:00')).toBeInTheDocument();
+  });
+
+  it('stops the timer and explains when the server refuses to start a session', async () => {
+    mockApi({
+      ...routes(),
+      'POST /sessions/start': { status: 404, body: { error: 'Task not found' } },
+    });
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    renderWithProviders(<Pomodoro />);
+    await pickTaskAndStart(user);
+    expect(await screen.findByText('Task not found')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /start/i })).toBeInTheDocument();
   });
 });

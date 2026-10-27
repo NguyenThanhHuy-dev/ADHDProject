@@ -39,9 +39,7 @@ import {
   TimerOutlined,
 } from '@mui/icons-material';
 import StatCard from '../../components/StatCard';
-import useTaskStore from '../../store/taskStore';
-import usePomodoroStore from '../../store/pomodoroStore';
-import useRewardStore from '../../store/rewardStore';
+import { usePoints, useSessions, useStreak, useTasks } from '../../api/hooks';
 
 const shortDate = (d: string) =>
   new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
@@ -51,15 +49,16 @@ function Dashboard() {
   const [showHelp, setShowHelp] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
-  const tasks = useTaskStore((state) => state.tasks);
-  const sessions = usePomodoroStore((state) => state.sessions);
-  const points = useRewardStore((state) => state.points);
-  const streakInfo = usePomodoroStore((state) => state.getStreakInfo());
+  const { data: tasks = [] } = useTasks();
+  const { data: sessions = [] } = useSessions();
+  const points = usePoints().data?.balance ?? 0;
+  const streakInfo = useStreak().data ?? { currentStreak: 0, nextBonus: 0 };
 
   const completedTasks = tasks.filter((task) => task.completed);
   const pendingTasks = tasks.filter((task) => !task.completed);
 
-  const recentSessions = sessions.slice(-5).reverse();
+  // The API returns the newest sessions first.
+  const recentSessions = sessions.slice(0, 5);
 
   const tutorialSteps = [
     {
@@ -206,7 +205,7 @@ function Dashboard() {
                 </Typography>
                 <Typography sx={{ opacity: 0.9, maxWidth: 420 }}>
                   {streakActive
-                    ? `Keep it going: your next streak reward is ${streakInfo.currentStreak * 10} points.`
+                    ? `Keep it going: reaching 60 minutes today pays ${streakInfo.nextBonus} bonus points.`
                     : 'Complete 60 minutes of focused work today to start your streak.'}
                 </Typography>
               </Box>

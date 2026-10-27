@@ -1,7 +1,9 @@
 import { lazy, Suspense, useMemo } from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material';
+import { Box, ThemeProvider } from '@mui/material';
 import { createAppTheme } from './theme';
+import { useMe } from './api/hooks';
+import AuthPage from './pages/auth/AuthPage';
 import CssBaseline from '@mui/material/CssBaseline';
 import CircularProgress from '@mui/material/CircularProgress';
 import useThemeStore from './store/themeStore';
@@ -21,22 +23,31 @@ function App() {
   const darkMode = useThemeStore((state) => state.darkMode);
 
   const theme = useMemo(() => createAppTheme(darkMode), [darkMode]);
+  const { data: user, isLoading } = useMe();
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Layout>
-        <Suspense fallback={<CircularProgress sx={{ m: 4 }} />}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/pomodoro" element={<Pomodoro />} />
-            <Route path="/tasks" element={<TaskList />} />
-            <Route path="/rewards" element={<Rewards />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
-          </Routes>
-        </Suspense>
-      </Layout>
+      {isLoading ? (
+        <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}>
+          <CircularProgress />
+        </Box>
+      ) : !user ? (
+        <AuthPage />
+      ) : (
+        <Layout>
+          <Suspense fallback={<CircularProgress sx={{ m: 4 }} />}>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/pomodoro" element={<Pomodoro />} />
+              <Route path="/tasks" element={<TaskList />} />
+              <Route path="/rewards" element={<Rewards />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
+            </Routes>
+          </Suspense>
+        </Layout>
+      )}
     </ThemeProvider>
   );
 }

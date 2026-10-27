@@ -9,6 +9,7 @@ import { COOKIE_NAME } from './constants';
 import type { Db } from './db/types';
 import { randomInt } from 'node:crypto';
 import { authRoutes } from './routes/auth';
+import { importRoutes } from './routes/import';
 import { pointRoutes } from './routes/points';
 import { rewardRoutes } from './routes/rewards';
 import { sessionRoutes } from './routes/sessions';
@@ -79,6 +80,7 @@ export const buildApp = async (
   await app.register(sessionRoutes, { prefix: '/api/sessions' });
   await app.register(pointRoutes, { prefix: '/api/points' });
   await app.register(rewardRoutes, { prefix: '/api/rewards' });
+  await app.register(importRoutes, { prefix: '/api/import' });
 
   return app;
 };

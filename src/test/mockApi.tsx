@@ -82,6 +82,25 @@ export const emptyAccount: Record<string, Handler> = {
   'GET /points': { body: { balance: 0, history: [] } },
   'GET /rewards/inventory': { body: [] },
   'GET /rewards/catalog': { body: { cost: 30, rewards: [] } },
+  'GET /stats/heatmap': {
+    body: { timeZone: 'UTC', from: '2030-01-01', to: '2030-01-07', days: [] },
+  },
+  'GET /stats/hours': { body: { timeZone: 'UTC', hours: [], bestHour: null } },
+  'GET /stats/weekly': { body: { timeZone: 'UTC', weeks: [] } },
+  'GET /stats/overview': {
+    body: {
+      timeZone: 'UTC',
+      tasks: { done: 0, open: 0, completionRate: 0, byQuadrant: [] },
+      focus: {
+        totalMinutes: 0,
+        totalSessions: 0,
+        activeDays: 0,
+        avgMinutesPerActiveDay: 0,
+        bestDay: null,
+        longestStreakDays: 0,
+      },
+    },
+  },
 };
 
 export const renderWithProviders = (ui: ReactElement, route = '/') =>

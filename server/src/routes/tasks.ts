@@ -1,21 +1,25 @@
 import { and, desc, eq, isNotNull, isNull } from 'drizzle-orm';
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
-import { tasks } from '../db/schema';
+import { tasks, users } from '../db/schema';
 import { award, QUADRANT_POINTS } from '../domain/points';
+import { nextDueAt } from '../domain/recurrence';
 
 const quadrant = z.enum(['q1', 'q2', 'q3', 'q4']);
+const recurrence = z.enum(['none', 'daily', 'weekly']);
 
 const fields = {
   title: z.string().trim().min(1).max(200),
   description: z.string().max(2000),
   quadrant,
+  recurrence,
   dueAt: z.coerce.date().nullable(),
 };
 
 const createBody = z.object({
   ...fields,
   description: fields.description.default(''),
+  recurrence: fields.recurrence.default('none'),
   dueAt: fields.dueAt.default(null),
 });
 
@@ -50,6 +54,9 @@ export const taskRoutes: FastifyPluginAsync = async (app) => {
 
   app.post('/', async (request, reply) => {
     const body = createBody.parse(request.body);
+    if (body.dueAt && body.dueAt < app.now()) {
+      return reply.status(400).send({ error: 'Due date is in the past' });
+    }
     const [task] = await app.db
       .insert(tasks)
       .values({ ...body, userId: request.user.sub })
@@ -60,6 +67,17 @@ export const taskRoutes: FastifyPluginAsync = async (app) => {
   app.patch('/:id', async (request, reply) => {
     const { id } = idParams.parse(request.params);
     const body = updateBody.parse(request.body);
+    if (body.dueAt) {
+      // Editing other fields of an already-overdue task re-sends its old due date: that is fine.
+      const [current] = await app.db
+        .select({ dueAt: tasks.dueAt })
+        .from(tasks)
+        .where(owned(id, request.user.sub));
+      const unchanged = current?.dueAt?.getTime() === body.dueAt.getTime();
+      if (!unchanged && body.dueAt < app.now()) {
+        return reply.status(400).send({ error: 'Due date is in the past' });
+      }
+    }
     const [task] = await app.db
       .update(tasks)
       .set({ ...body, updatedAt: new Date() })
@@ -82,13 +100,35 @@ export const taskRoutes: FastifyPluginAsync = async (app) => {
       if (updated) {
         const pointsAwarded = QUADRANT_POINTS[updated.quadrant];
         await award(tx, userId, pointsAwarded, 'task_complete', updated.id);
-        return { task: updated, pointsAwarded };
+
+        let nextTask = null;
+        if (updated.recurrence !== 'none') {
+          const [owner] = await tx
+            .select({ tz: users.timezone })
+            .from(users)
+            .where(eq(users.id, userId));
+          const dueAt = updated.dueAt
+            ? await nextDueAt(tx, updated.dueAt, updated.recurrence, owner?.tz ?? 'UTC', app.now())
+            : null;
+          [nextTask] = await tx
+            .insert(tasks)
+            .values({
+              userId,
+              title: updated.title,
+              description: updated.description,
+              quadrant: updated.quadrant,
+              recurrence: updated.recurrence,
+              dueAt,
+            })
+            .returning();
+        }
+        return { task: updated, pointsAwarded, nextTask };
       }
       const [existing] = await tx.select().from(tasks).where(owned(id, userId));
-      return existing ? { task: existing, pointsAwarded: 0 } : null;
+      return existing ? { task: existing, pointsAwarded: 0, nextTask: null } : null;
     });
     if (!result) return reply.status(404).send({ error: 'Task not found' });
-    return { ...result.task, pointsAwarded: result.pointsAwarded };
+    return { ...result.task, pointsAwarded: result.pointsAwarded, nextTask: result.nextTask };
   });
 
   app.delete('/:id', async (request, reply) => {

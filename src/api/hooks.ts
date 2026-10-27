@@ -1,6 +1,10 @@
 import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import type {
+  HeatmapData,
+  HoursData,
   InventoryItem,
+  OverviewData,
+  WeeklyData,
   LedgerEntry,
   PomodoroSession,
   Reward,
@@ -36,6 +40,7 @@ export const keys = {
   streak: ['streak'] as const,
   inventory: ['inventory'] as const,
   catalog: ['catalog'] as const,
+  stats: ['stats'] as const,
 };
 
 /* ---------- auth ---------- */
@@ -137,7 +142,7 @@ export const useDeleteTask = () => {
 };
 
 export const useCompleteTask = () => {
-  const invalidate = useInvalidate(keys.tasks, keys.points);
+  const invalidate = useInvalidate(keys.tasks, keys.points, keys.stats);
   return useMutation({
     mutationFn: (id: string) =>
       api<ApiTask & { pointsAwarded: number }>('POST', `/tasks/${id}/complete`),
@@ -186,7 +191,7 @@ export const useCancelSession = () =>
   });
 
 export const useCompleteSession = () => {
-  const invalidate = useInvalidate(keys.sessions, keys.points, keys.streak);
+  const invalidate = useInvalidate(keys.sessions, keys.points, keys.streak, keys.stats);
   return useMutation({
     mutationFn: (id: string) => api<SessionResult>('POST', `/sessions/${id}/complete`),
     onSuccess: invalidate,
@@ -217,3 +222,29 @@ export const useGacha = () => {
     onSuccess: invalidate,
   });
 };
+
+/* ---------- stats ---------- */
+
+export const useHeatmap = (weeks = 26) =>
+  useQuery({
+    queryKey: [...keys.stats, 'heatmap', weeks],
+    queryFn: () => api<HeatmapData>('GET', `/stats/heatmap?weeks=${weeks}`),
+  });
+
+export const useHours = () =>
+  useQuery({
+    queryKey: [...keys.stats, 'hours'],
+    queryFn: () => api<HoursData>('GET', '/stats/hours'),
+  });
+
+export const useWeekly = (weeks = 8) =>
+  useQuery({
+    queryKey: [...keys.stats, 'weekly', weeks],
+    queryFn: () => api<WeeklyData>('GET', `/stats/weekly?weeks=${weeks}`),
+  });
+
+export const useOverview = () =>
+  useQuery({
+    queryKey: [...keys.stats, 'overview'],
+    queryFn: () => api<OverviewData>('GET', '/stats/overview'),
+  });

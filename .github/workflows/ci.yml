@@ -41,3 +41,12 @@ jobs:
       - run: npx tsx src/db/migrate.ts
         working-directory: server
       - run: npm run build
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the API image
+        run: docker build -f server/Dockerfile -t adhd-api .
+      - name: Build the web image
+        run: docker build -t adhd-web .

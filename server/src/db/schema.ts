@@ -20,7 +20,9 @@ export const ledgerReasonEnum = pgEnum('ledger_reason', [
   'session_complete',
   'streak_bonus',
   'gacha_spend',
+  'task_overdue',
 ]);
+export const recurrenceEnum = pgEnum('recurrence', ['none', 'daily', 'weekly']);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -41,6 +43,7 @@ export const tasks = pgTable(
     title: text('title').notNull(),
     description: text('description').notNull().default(''),
     quadrant: quadrantEnum('quadrant').notNull(),
+    recurrence: recurrenceEnum('recurrence').notNull().default('none'),
     dueAt: timestamp('due_at', { withTimezone: true }),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

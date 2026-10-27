@@ -1,8 +1,10 @@
 import cookie from '@fastify/cookie';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
+import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import Fastify, { type FastifyRequest } from 'fastify';
+import { sql } from 'drizzle-orm';
 import { ZodError } from 'zod';
 import type { Config } from './config';
 import { COOKIE_NAME } from './constants';
@@ -13,12 +15,13 @@ import { importRoutes } from './routes/import';
 import { pointRoutes } from './routes/points';
 import { rewardRoutes } from './routes/rewards';
 import { sessionRoutes } from './routes/sessions';
+import { statsRoutes } from './routes/stats';
 import { taskRoutes } from './routes/tasks';
 
 declare module 'fastify' {
   interface FastifyInstance {
     db: Db;
-    config: Pick<Config, 'NODE_ENV' | 'CORS_ORIGIN' | 'JWT_SECRET'>;
+    config: Pick<Config, 'NODE_ENV' | 'CORS_ORIGIN' | 'JWT_SECRET' | 'TRUST_PROXY'>;
     authenticate: (request: FastifyRequest) => Promise<void>;
     /** Injected so tests can control time and randomness. */
     now: () => Date;
@@ -42,16 +45,21 @@ const secureRandom = () => randomInt(0, 2 ** 32) / 2 ** 32;
 
 export const buildApp = async (
   db: Db,
-  config: Pick<Config, 'NODE_ENV' | 'CORS_ORIGIN' | 'JWT_SECRET'>,
+  config: Pick<Config, 'NODE_ENV' | 'CORS_ORIGIN' | 'JWT_SECRET' | 'TRUST_PROXY'>,
   deps: AppDeps = {},
 ) => {
-  const app = Fastify({ logger: config.NODE_ENV === 'development' });
+  const app = Fastify({
+    logger: config.NODE_ENV === 'development',
+    // Behind nginx or a load balancer the client address comes from X-Forwarded-For.
+    trustProxy: config.TRUST_PROXY,
+  });
 
   app.decorate('db', db);
   app.decorate('config', config);
   app.decorate('now', deps.now ?? (() => new Date()));
   app.decorate('random', deps.random ?? secureRandom);
 
+  await app.register(helmet);
   await app.register(cors, { origin: config.CORS_ORIGIN, credentials: true });
   await app.register(cookie);
   await app.register(jwt, {
@@ -74,13 +82,21 @@ export const buildApp = async (
     return reply.status(status).send({ error: message });
   });
 
-  app.get('/api/health', async () => ({ status: 'ok' }));
+  app.get('/api/health', async (_request, reply) => {
+    try {
+      await app.db.execute(sql`select 1`);
+      return { status: 'ok', db: 'up' };
+    } catch {
+      return reply.status(503).send({ status: 'degraded', db: 'down' });
+    }
+  });
   await app.register(authRoutes, { prefix: '/api/auth' });
   await app.register(taskRoutes, { prefix: '/api/tasks' });
   await app.register(sessionRoutes, { prefix: '/api/sessions' });
   await app.register(pointRoutes, { prefix: '/api/points' });
   await app.register(rewardRoutes, { prefix: '/api/rewards' });
   await app.register(importRoutes, { prefix: '/api/import' });
+  await app.register(statsRoutes, { prefix: '/api/stats' });
 
   return app;
 };

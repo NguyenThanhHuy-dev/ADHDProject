@@ -23,6 +23,7 @@ import {
   StepLabel,
   StepContent,
   Stack,
+  MenuItem,
 } from '@mui/material';
 import {
   Delete as DeleteIcon,
@@ -41,7 +42,7 @@ import {
   useUpdateTask,
 } from '../../api/hooks';
 import useSoundStore from '../../store/soundStore';
-import type { QuadrantId, Task } from '../../types';
+import type { QuadrantId, Recurrence, Task } from '../../types';
 
 const quadrants: { id: QuadrantId; title: string; color: string; points: number }[] = [
   { id: 'q1', title: 'Urgent & Important', color: '#ff6b6b', points: 15 },
@@ -60,7 +61,9 @@ function TaskList() {
     isUrgent: false,
     dueDate: '',
     dueTime: '23:59',
+    recurrence: 'none' as Recurrence,
   });
+  const [formError, setFormError] = useState<string | null>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
@@ -144,6 +147,7 @@ function TaskList() {
         isUrgent: task.quadrant === 'q1' || task.quadrant === 'q3',
         dueDate,
         dueTime,
+        recurrence: task.recurrence,
       });
     } else {
       setEditingTask(null);
@@ -154,8 +158,10 @@ function TaskList() {
         isUrgent: false,
         dueDate: getDefaultDeadline(),
         dueTime: '23:59',
+        recurrence: 'none',
       });
     }
+    setFormError(null);
     setOpen(true);
     playSound('notification');
   };
@@ -173,17 +179,20 @@ function TaskList() {
       title: fields.title,
       description: fields.description,
       quadrant,
+      recurrence: taskForm.recurrence,
       dueDate: taskForm.dueDate && dueTime ? `${taskForm.dueDate}T${dueTime}` : null,
     };
+    // Keep the dialog open on failure so the server's message (e.g. a past due date) is visible.
+    const handlers = {
+      onSuccess: () => {
+        playSound(editingTask ? 'notification' : 'start');
+        handleClose();
+      },
+      onError: (error: Error) => setFormError(error.message),
+    };
 
-    if (editingTask) {
-      updateTask.mutate({ id: editingTask.id, ...taskData });
-      playSound('notification');
-    } else {
-      createTask.mutate(taskData);
-      playSound('start');
-    }
-    handleClose();
+    if (editingTask) updateTask.mutate({ id: editingTask.id, ...taskData }, handlers);
+    else createTask.mutate(taskData, handlers);
   };
 
   // Points are paid by the server when the completion is recorded.
@@ -336,6 +345,16 @@ function TaskList() {
                                   task.dueDate.split('T')[0],
                                   task.dueDate.split('T')[1],
                                 )}
+                              </Typography>
+                            )}
+                            {task.recurrence !== 'none' && (
+                              <Typography
+                                component="span"
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: 'block' }}
+                              >
+                                Repeats {task.recurrence === 'daily' ? 'every day' : 'every week'}
                               </Typography>
                             )}
                           </>
@@ -514,12 +533,40 @@ function TaskList() {
                   InputLabelProps={{ shrink: true }}
                 />
               </Stack>
+              <TextField
+                select
+                fullWidth
+                label="Repeat"
+                value={taskForm.recurrence}
+                onChange={(e) =>
+                  setTaskForm({ ...taskForm, recurrence: e.target.value as Recurrence })
+                }
+                sx={{ mt: 2 }}
+                helperText={
+                  taskForm.recurrence === 'none'
+                    ? undefined
+                    : 'A new copy is created when you finish this task.'
+                }
+              >
+                <MenuItem value="none">Does not repeat</MenuItem>
+                <MenuItem value="daily">Every day</MenuItem>
+                <MenuItem value="weekly">Every week</MenuItem>
+              </TextField>
             </Box>
+            {formError && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {formError}
+              </Alert>
+            )}
           </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} variant="contained" disabled={!taskForm.title.trim()}>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={!taskForm.title.trim() || createTask.isPending || updateTask.isPending}
+          >
             {editingTask ? 'Update' : 'Add'}
           </Button>
         </DialogActions>

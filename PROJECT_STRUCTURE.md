@@ -9,6 +9,7 @@ src/
 ├── pages/             # One folder per route
 │   ├── auth/          # sign-in and registration
 │   ├── dashboard/
+│   ├── insights/      # heatmap, best hour, weekly trend
 │   ├── pomodoro/      # includes Pomodoro.test.tsx
 │   ├── tasks/
 │   ├── rewards/
@@ -25,11 +26,14 @@ public/                # favicon, manifest, sounds
 docs/screenshots/      # Images used by README
 server/                # REST API (Fastify + Drizzle + PostgreSQL)
 ├── src/routes/        # auth, tasks, sessions, points, rewards
-├── src/domain/        # points ledger, streak and gacha rules (no HTTP)
+├── src/domain/        # points ledger, streak, gacha, stats and recurrence rules (no HTTP)
+├── src/jobs/          # overdue penalty job and scheduler
 ├── src/db/            # schema, client, migrate
 ├── drizzle/           # generated SQL migrations
 └── test/              # API tests (in-memory Postgres)
-docker-compose.yml     # Postgres for local development
+docker-compose.yml     # Postgres for development; `--profile full` adds the API and the web app
+Dockerfile, nginx.conf # web image (static build behind nginx, proxies /api)
+docs/API.md            # endpoint reference
 ```
 
 Guidelines:

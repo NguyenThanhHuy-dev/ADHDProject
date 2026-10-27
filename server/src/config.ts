@@ -5,6 +5,15 @@ const schema = z.object({
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   PORT: z.coerce.number().default(3001),
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  TRUST_PROXY: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  JOBS_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
+  JOBS_INTERVAL_MINUTES: z.coerce.number().int().min(1).default(15),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 

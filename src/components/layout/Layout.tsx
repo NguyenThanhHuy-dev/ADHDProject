@@ -20,6 +20,7 @@ import {
   CardGiftcardRounded as RewardsIcon,
   PersonOutlineRounded as ProfileIcon,
   SettingsOutlined as SettingsIcon,
+  InsightsRounded as InsightsIcon,
   BoltRounded as LogoIcon,
   LogoutRounded as LogoutIcon,
 } from '@mui/icons-material';
@@ -34,6 +35,7 @@ const menuItems = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { text: 'Pomodoro', icon: <TimerIcon />, path: '/pomodoro' },
   { text: 'Tasks', icon: <TasksIcon />, path: '/tasks' },
+  { text: 'Insights', icon: <InsightsIcon />, path: '/insights' },
   { text: 'Rewards', icon: <RewardsIcon />, path: '/rewards' },
   { text: 'Profile', icon: <ProfileIcon />, path: '/profile' },
   { text: 'Settings', icon: <SettingsIcon />, path: '/settings' },

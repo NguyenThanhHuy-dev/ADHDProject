@@ -5,6 +5,7 @@ export interface ApiTask {
   title: string;
   description: string;
   quadrant: Task['quadrant'];
+  recurrence: Task['recurrence'];
   dueAt: string | null;
   completedAt: string | null;
   createdAt: string;
@@ -37,6 +38,7 @@ export const toUiTask = (t: ApiTask): Task => ({
   title: t.title,
   description: t.description,
   quadrant: t.quadrant,
+  recurrence: t.recurrence,
   dueDate: t.dueAt ? isoToLocal(t.dueAt) : null,
   completed: t.completedAt !== null,
   completedAt: t.completedAt ?? undefined,

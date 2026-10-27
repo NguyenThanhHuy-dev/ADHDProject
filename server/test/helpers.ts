@@ -9,6 +9,7 @@ export const testConfig = {
   NODE_ENV: 'test' as const,
   CORS_ORIGIN: 'http://localhost:5173',
   JWT_SECRET: 'test-secret-test-secret-test-secret-123',
+  TRUST_PROXY: false,
 };
 
 export const makeClock = (start = '2030-06-10T09:00:00Z') => {

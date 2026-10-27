@@ -8,6 +8,7 @@ const task = (over: object = {}) => ({
   title: 'Write report',
   description: 'Draft',
   quadrant: 'q1',
+  recurrence: 'none',
   dueAt: null,
   completedAt: null,
   createdAt: '2030-01-01T00:00:00.000Z',
@@ -40,7 +41,7 @@ describe('TaskList', () => {
       string,
       unknown
     >;
-    expect(body).toMatchObject({ title: 'Plan sprint', quadrant: 'q2' });
+    expect(body).toMatchObject({ title: 'Plan sprint', quadrant: 'q2', recurrence: 'none' });
     expect(new Date(body.dueAt as string).toISOString()).toBe(body.dueAt);
   });
 
@@ -65,5 +66,42 @@ describe('TaskList', () => {
     });
     renderWithProviders(<TaskList />);
     expect(await screen.findByText(/overdue:/i)).toBeInTheDocument();
+  });
+
+  it('sends the chosen repeat option', async () => {
+    const api = mockApi({ ...emptyAccount, 'POST /tasks': { status: 201, body: task() } });
+    renderWithProviders(<TaskList />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /add new task/i }));
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Title'), 'Water plants');
+    await user.click(within(dialog).getByRole('combobox', { name: /repeat/i }));
+    await user.click(await screen.findByRole('option', { name: 'Every week' }));
+    await user.click(within(dialog).getByRole('button', { name: /^add$/i }));
+    await waitFor(() => expect(api.count('POST', '/tasks')).toBe(1));
+    expect(api.calls.find((c) => c.path === '/tasks' && c.method === 'POST')!.body).toMatchObject({
+      recurrence: 'weekly',
+    });
+  });
+
+  it("keeps the dialog open and shows the server's message when saving fails", async () => {
+    mockApi({
+      ...emptyAccount,
+      'POST /tasks': { status: 400, body: { error: 'Due date is in the past' } },
+    });
+    renderWithProviders(<TaskList />);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: /add new task/i }));
+    const dialog = await screen.findByRole('dialog');
+    await user.type(within(dialog).getByLabelText('Title'), 'Too late');
+    await user.click(within(dialog).getByRole('button', { name: /^add$/i }));
+    expect(await within(dialog).findByText('Due date is in the past')).toBeInTheDocument();
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+  });
+
+  it('labels a repeating task', async () => {
+    mockApi({ ...emptyAccount, 'GET /tasks': { body: [task({ recurrence: 'daily' })] } });
+    renderWithProviders(<TaskList />);
+    expect(await screen.findByText('Repeats every day')).toBeInTheDocument();
   });
 });

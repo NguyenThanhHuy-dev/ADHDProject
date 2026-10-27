@@ -5,6 +5,7 @@ const apiTask: ApiTask = {
   title: 'Write report',
   description: '',
   quadrant: 'q1',
+  recurrence: 'none',
   dueAt: '2030-01-02T10:30:00.000Z',
   completedAt: null,
   createdAt: '2030-01-01T00:00:00.000Z',

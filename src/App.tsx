@@ -12,6 +12,7 @@ import useThemeStore from './store/themeStore';
 const Dashboard = lazy(() => import('./pages/dashboard/Dashboard'));
 const Pomodoro = lazy(() => import('./pages/pomodoro/Pomodoro'));
 const TaskList = lazy(() => import('./pages/tasks/TaskList'));
+const Insights = lazy(() => import('./pages/insights/Insights'));
 const Rewards = lazy(() => import('./pages/rewards/Rewards'));
 const Profile = lazy(() => import('./pages/profile/Profile'));
 const Settings = lazy(() => import('./pages/settings/Settings'));
@@ -41,6 +42,7 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/pomodoro" element={<Pomodoro />} />
               <Route path="/tasks" element={<TaskList />} />
+              <Route path="/insights" element={<Insights />} />
               <Route path="/rewards" element={<Rewards />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/settings" element={<Settings />} />

@@ -9,25 +9,31 @@ daily focus streaks and a gacha-style reward system. Accounts and data live in P
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
-| Tasks (Eisenhower matrix)            | Pomodoro timer                             |
-| ------------------------------------ | ------------------------------------------ |
-| ![Tasks](docs/screenshots/tasks.png) | ![Pomodoro](docs/screenshots/pomodoro.png) |
+![Insights](docs/screenshots/insights.png)
 
-| Rewards                                  | Profile                                  |
-| ---------------------------------------- | ---------------------------------------- |
-| ![Rewards](docs/screenshots/rewards.png) | ![Profile](docs/screenshots/profile.png) |
+| Sign in                                | Tasks (Eisenhower matrix)            |
+| -------------------------------------- | ------------------------------------ |
+| ![Sign in](docs/screenshots/login.png) | ![Tasks](docs/screenshots/tasks.png) |
 
-| Dark mode                                         | Mobile                                                                       |
-| ------------------------------------------------- | ---------------------------------------------------------------------------- |
-| ![Dark mode](docs/screenshots/dashboard-dark.png) | <img src="docs/screenshots/mobile.png" width="260" alt="Mobile dashboard" /> |
+| Pomodoro timer                             | Rewards                                  |
+| ------------------------------------------ | ---------------------------------------- |
+| ![Pomodoro](docs/screenshots/pomodoro.png) | ![Rewards](docs/screenshots/rewards.png) |
+
+| Profile                                  | Dark mode                                         |
+| ---------------------------------------- | ------------------------------------------------- |
+| ![Profile](docs/screenshots/profile.png) | ![Dark mode](docs/screenshots/dashboard-dark.png) |
+
+<img src="docs/screenshots/mobile.png" width="260" alt="Mobile dashboard" />
 
 ## Features
 
-- Pomodoro timer with per-task sessions and configurable work/break length
-- Eisenhower matrix (Q1–Q4) with points per quadrant and overdue penalties
-- Dashboard charts: tasks completed and focus minutes per day, streak counter
-- Rewards: spend points on a gacha with four rarities, inventory view
-- Dark mode, sound cues, browser notifications
+- Accounts with httpOnly-cookie sessions; every query is scoped to the signed-in user
+- Pomodoro timer: the server checks the time really passed before it pays points, so sessions cannot be farmed
+- Eisenhower matrix (Q1-Q4) with points per quadrant, repeating tasks (daily or weekly) and an overdue penalty job
+- Streaks counted per day in your own time zone, with bonus points from day 2
+- Insights: focus calendar (heatmap), best time of day, weekly trend, completion by priority
+- Rewards: a server-side gacha with four rarities, an append-only points ledger
+- Dark mode, sound cues, installable from a single `docker compose` command
 
 ## Getting started
 
@@ -58,6 +64,15 @@ See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for the folder layout.
 ## Deploy
 
 Import the repo in Vercel (framework preset: Vite). `vercel.json` rewrites all routes to `index.html` for client-side routing.
+
+## Run everything in Docker
+
+```bash
+JWT_SECRET=$(openssl rand -hex 32) docker compose --profile full up --build
+# web on http://localhost:8080, API behind it, PostgreSQL with a persistent volume
+```
+
+The API container applies pending migrations on start. Full endpoint reference: [docs/API.md](docs/API.md).
 
 ## Backend
 

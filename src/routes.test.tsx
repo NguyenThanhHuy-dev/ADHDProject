@@ -21,6 +21,7 @@ describe('routes', () => {
     ['/', 'Dashboard'],
     ['/pomodoro', 'Pomodoro Timer'],
     ['/tasks', 'Task List'],
+    ['/insights', 'Insights'],
     ['/rewards', 'Rewards'],
     ['/profile', 'Profile'],
     ['/settings', 'Settings'],

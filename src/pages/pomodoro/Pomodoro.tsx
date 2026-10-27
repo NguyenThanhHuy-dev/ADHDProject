@@ -269,7 +269,7 @@ function Pomodoro() {
       </Box>
 
       <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={7}>
           <Paper
             sx={{
               p: 3,
@@ -284,7 +284,13 @@ function Pomodoro() {
               },
             }}
           >
-            <Box sx={{ position: 'relative', width: 300, height: 300 }}>
+            <Box
+              sx={{
+                position: 'relative',
+                width: { xs: 240, sm: 300 },
+                height: { xs: 240, sm: 300 },
+              }}
+            >
               <svg
                 viewBox="0 0 100 100"
                 style={{
@@ -293,7 +299,14 @@ function Pomodoro() {
                   transform: 'rotate(-90deg)',
                 }}
               >
-                <circle cx="50" cy="50" r="45" fill="none" stroke="#e0e0e0" strokeWidth="4" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="rgba(99,102,241,0.14)"
+                  strokeWidth="4"
+                />
                 <circle
                   ref={progressRef}
                   cx="50"
@@ -325,7 +338,9 @@ function Pomodoro() {
                   sx={{
                     color: backgroundColor,
                     textShadow: `0 2px 4px ${backgroundColor}30`,
-                    fontWeight: 'bold',
+                    fontWeight: 800,
+                    fontVariantNumeric: 'tabular-nums',
+                    fontSize: { xs: '3rem', sm: '3.75rem' },
                   }}
                 >
                   {formatTime(timeLeft)}
@@ -386,6 +401,12 @@ function Pomodoro() {
               </FormControl>
             )}
 
+            {isWorkMode && !selectedTask && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5 }}>
+                Pick a task to start the timer.
+              </Typography>
+            )}
+
             <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
               <Button
                 variant="contained"
@@ -403,7 +424,7 @@ function Pomodoro() {
           </Paper>
         </Grid>
 
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={5}>
           <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               Statistics

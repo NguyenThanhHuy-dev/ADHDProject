@@ -1,11 +1,16 @@
-import React from 'react';
-import { Box, Typography, Grid, Paper, List, ListItem, ListItemText, Divider } from '@mui/material';
-import { Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { Box, Typography, Grid, useTheme } from '@mui/material';
+import {
+  AssignmentRounded,
+  TaskAltRounded,
+  TimerOutlined,
+  HourglassBottomRounded,
+  StarRounded,
+} from '@mui/icons-material';
+import StatCard from '../../components/StatCard';
+import DonutCard from '../../components/DonutCard';
 import useTaskStore from '../../store/taskStore';
 import usePomodoroStore from '../../store/pomodoroStore';
 import useRewardStore from '../../store/rewardStore';
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 function Profile() {
   const tasks = useTaskStore((state) => state.tasks);
@@ -43,110 +48,70 @@ function Profile() {
     { name: 'Legendary', value: rarityDistribution.legendary },
   ];
 
+  const theme = useTheme();
+  const taskColors = [theme.palette.success.main, theme.palette.warning.main];
+  const rarityColors = ['#94a3b8', '#3b82f6', '#a855f7', '#f59e0b'];
+
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Profile
-      </Typography>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4">Profile</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Your lifetime stats
+        </Typography>
+      </Box>
 
       <Grid container spacing={3}>
-        {/* Statistics Overview */}
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Statistics Overview
-            </Typography>
-            <List>
-              <ListItem>
-                <ListItemText primary="Total Tasks" secondary={`${tasks.length} tasks`} />
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemText
-                  primary="Task Completion Rate"
-                  secondary={`${taskCompletionRate.toFixed(1)}%`}
-                />
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemText
-                  primary="Total Pomodoro Sessions"
-                  secondary={`${totalSessions} sessions`}
-                />
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemText
-                  primary="Total Focus Time"
-                  secondary={`${Math.round(totalSessionTime)} minutes`}
-                />
-              </ListItem>
-              <Divider />
-              <ListItem>
-                <ListItemText primary="Reward Points" secondary={`${points} points`} />
-              </ListItem>
-            </List>
-          </Paper>
+        <Grid item xs={6} md={4}>
+          <StatCard label="Total tasks" value={tasks.length} icon={<AssignmentRounded />} />
+        </Grid>
+        <Grid item xs={6} md={4}>
+          <StatCard
+            label="Completion rate"
+            value={`${taskCompletionRate.toFixed(0)}%`}
+            icon={<TaskAltRounded />}
+            color="success.main"
+          />
+        </Grid>
+        <Grid item xs={6} md={4}>
+          <StatCard
+            label="Pomodoro sessions"
+            value={totalSessions}
+            icon={<TimerOutlined />}
+            color="warning.main"
+          />
+        </Grid>
+        <Grid item xs={6} md={6}>
+          <StatCard
+            label="Total focus time"
+            value={`${Math.round(totalSessionTime)} min`}
+            icon={<HourglassBottomRounded />}
+          />
+        </Grid>
+        <Grid item xs={6} md={6}>
+          <StatCard
+            label="Reward points"
+            value={points}
+            icon={<StarRounded />}
+            color="secondary.main"
+          />
         </Grid>
 
-        {/* Task Distribution */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Task Distribution
-            </Typography>
-            <Box sx={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={taskChartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {taskChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
+          <DonutCard
+            title="Task distribution"
+            data={taskChartData}
+            colors={taskColors}
+            emptyText="No tasks yet."
+          />
         </Grid>
-
-        {/* Reward Distribution */}
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 2 }}>
-            <Typography variant="h6" gutterBottom>
-              Reward Distribution
-            </Typography>
-            <Box sx={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={rewardChartData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {rewardChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </Box>
-          </Paper>
+          <DonutCard
+            title="Reward distribution"
+            data={rewardChartData}
+            colors={rarityColors}
+            emptyText="No rewards yet. Try your luck on the Rewards page."
+          />
         </Grid>
       </Grid>
     </Box>

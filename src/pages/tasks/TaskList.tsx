@@ -234,53 +234,32 @@ function TaskList() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4">Task List</Typography>
-        <Tooltip title="Help">
-          <IconButton onClick={() => setShowHelp(true)}>
-            <HelpIcon />
-          </IconButton>
-        </Tooltip>
-      </Box>
-
       <Box
         sx={{
           display: 'flex',
-          justifyContent: 'center',
-          mb: 4,
-          position: 'relative',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: '50%',
-            left: 0,
-            right: 0,
-            height: '1px',
-            backgroundColor: 'divider',
-            zIndex: 0,
-          },
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2,
+          flexWrap: 'wrap',
+          mb: 3,
         }}
       >
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => handleOpen()}
-          sx={{
-            zIndex: 1,
-            py: 1.5,
-            px: 4,
-            fontSize: '1.1rem',
-            borderRadius: '50px',
-            boxShadow: 3,
-            '&:hover': {
-              boxShadow: 6,
-              transform: 'translateY(-2px)',
-            },
-            transition: 'all 0.2s ease-in-out',
-          }}
-        >
-          Add New Task
-        </Button>
+        <Box>
+          <Typography variant="h4">Task List</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Sort what matters with the Eisenhower matrix
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Tooltip title="Help">
+            <IconButton onClick={() => setShowHelp(true)} aria-label="Help">
+              <HelpIcon />
+            </IconButton>
+          </Tooltip>
+          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpen()}>
+            Add New Task
+          </Button>
+        </Box>
       </Box>
 
       <Grid container spacing={3}>
@@ -338,9 +317,10 @@ function TaskList() {
                       sx={{
                         bgcolor: 'background.paper',
                         mb: 1,
-                        borderRadius: 1,
+                        borderRadius: 2,
                         display: 'flex',
-                        alignItems: 'center',
+                        flexDirection: { xs: 'column', sm: 'row' },
+                        alignItems: { xs: 'stretch', sm: 'center' },
                         gap: 2,
                         p: 2,
                         '&:hover': {
@@ -383,16 +363,11 @@ function TaskList() {
                           onClick={() => handleTaskComplete(task.id)}
                           startIcon={<CheckIcon sx={{ fontSize: '1.2rem' }} />}
                           sx={{
-                            minWidth: '120px',
-                            height: '40px',
-                            borderRadius: '20px',
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            fontSize: '1rem',
-                            boxShadow: 2,
-                            px: 3,
+                            flex: { xs: 1, sm: 'none' },
+                            minWidth: '110px',
+                            height: '38px',
+                            fontSize: '0.95rem',
                             '&:hover': {
-                              boxShadow: 4,
                               transform: 'translateY(-1px)',
                             },
                             transition: 'all 0.2s ease-in-out',
@@ -430,6 +405,11 @@ function TaskList() {
                     </ListItem>
                   ))}
               </List>
+              {!tasks.some((task) => task.quadrant === quadrant.id && !task.completed) && (
+                <Typography variant="body2" color="text.secondary" sx={{ px: 1, py: 2 }}>
+                  Nothing here. Add a task or enjoy the space.
+                </Typography>
+              )}
             </Paper>
           </Grid>
         ))}
@@ -529,7 +509,7 @@ function TaskList() {
               <Typography variant="subtitle1" gutterBottom>
                 Due Date & Time
               </Typography>
-              <Stack direction="row" spacing={2}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField
                   fullWidth
                   label="Date"

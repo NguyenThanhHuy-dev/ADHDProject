@@ -5,6 +5,22 @@ daily focus streaks and a gacha-style reward system. Data stays in the browser (
 
 **Stack:** React 18, TypeScript, Vite, MUI, Zustand, Recharts, Vitest, ESLint, Prettier.
 
+## Screenshots
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+| Tasks (Eisenhower matrix)            | Pomodoro timer                             |
+| ------------------------------------ | ------------------------------------------ |
+| ![Tasks](docs/screenshots/tasks.png) | ![Pomodoro](docs/screenshots/pomodoro.png) |
+
+| Rewards                                  | Profile                                  |
+| ---------------------------------------- | ---------------------------------------- |
+| ![Rewards](docs/screenshots/rewards.png) | ![Profile](docs/screenshots/profile.png) |
+
+| Dark mode                                         | Mobile                                                                       |
+| ------------------------------------------------- | ---------------------------------------------------------------------------- |
+| ![Dark mode](docs/screenshots/dashboard-dark.png) | <img src="docs/screenshots/mobile.png" width="260" alt="Mobile dashboard" /> |
+
 ## Features
 
 - Pomodoro timer with per-task sessions and configurable work/break length
@@ -20,14 +36,14 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-| Script              | Purpose                    |
-| ------------------- | -------------------------- |
-| `npm run dev`       | Dev server                 |
+| Script              | Purpose                      |
+| ------------------- | ---------------------------- |
+| `npm run dev`       | Dev server                   |
 | `npm run build`     | Typecheck + production build |
-| `npm test`          | Vitest                     |
-| `npm run lint`      | ESLint                     |
-| `npm run typecheck` | `tsc --noEmit`             |
-| `npm run format`    | Prettier                   |
+| `npm test`          | Vitest                       |
+| `npm run lint`      | ESLint                       |
+| `npm run typecheck` | `tsc --noEmit`               |
+| `npm run format`    | Prettier                     |
 
 See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for the folder layout.
 

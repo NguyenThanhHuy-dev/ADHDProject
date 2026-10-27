@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Box,
+  LinearProgress,
   Typography,
   Button,
   Grid,
@@ -194,61 +195,75 @@ function Rewards() {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4">Rewards</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4">Rewards</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Spend the points you earn on random rewards
+          </Typography>
+        </Box>
         <Tooltip title="Help">
-          <IconButton onClick={() => setShowHelp(true)}>
+          <IconButton onClick={() => setShowHelp(true)} aria-label="Help">
             <HelpIcon />
           </IconButton>
         </Tooltip>
       </Box>
 
-      <Box
+      <Paper
         sx={{
+          p: { xs: 3, md: 4 },
+          mb: 3,
+          border: 'none',
+          color: '#fff',
           display: 'flex',
-          justifyContent: 'center',
-          mb: 4,
-          position: 'relative',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            top: '50%',
-            left: 0,
-            right: 0,
-            height: '1px',
-            backgroundColor: 'divider',
-            zIndex: 0,
-          },
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 3,
+          flexWrap: 'wrap',
+          background: 'linear-gradient(135deg, #f59e0b 0%, #ef4444 60%, #ec4899 120%)',
         }}
       >
+        <Box sx={{ flex: '1 1 260px' }}>
+          <Typography variant="overline" sx={{ opacity: 0.9, letterSpacing: '0.08em' }}>
+            Your balance
+          </Typography>
+          <Typography variant="h3" sx={{ fontWeight: 800, letterSpacing: '-0.03em' }}>
+            {points} points
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={Math.min(100, (points / 30) * 100)}
+            aria-label="Progress to next try"
+            sx={{
+              mt: 1.5,
+              height: 8,
+              borderRadius: 4,
+              bgcolor: 'rgba(255,255,255,0.3)',
+              '& .MuiLinearProgress-bar': { bgcolor: '#fff', borderRadius: 4 },
+            }}
+          />
+          <Typography variant="body2" sx={{ mt: 1, opacity: 0.9 }}>
+            {points >= 30
+              ? 'You can try your luck now.'
+              : `${30 - points} more points for your next try.`}
+          </Typography>
+        </Box>
         <Button
           variant="contained"
+          size="large"
           onClick={handleGacha}
           disabled={points < 30}
           sx={{
-            zIndex: 1,
-            py: 1.5,
+            bgcolor: '#fff',
+            color: '#c2410c',
             px: 4,
-            fontSize: '1.1rem',
-            borderRadius: '50px',
-            boxShadow: 3,
-            background: 'linear-gradient(45deg, #FF6B6B 30%, #FF8E53 90%)',
-            '&:hover': {
-              boxShadow: 6,
-              transform: 'translateY(-2px)',
-              background: 'linear-gradient(45deg, #FF8E53 30%, #FF6B6B 90%)',
-            },
-            '&:disabled': {
-              background: 'linear-gradient(45deg, #BDBDBD 30%, #9E9E9E 90%)',
-              transform: 'none',
-              boxShadow: 3,
-            },
-            transition: 'all 0.2s ease-in-out',
+            '&:hover': { bgcolor: '#fff7ed' },
+            '&.Mui-disabled': { bgcolor: 'rgba(255,255,255,0.35)', color: 'rgba(255,255,255,0.8)' },
           }}
         >
-          Try Your Luck! (30 points)
+          Try your luck (30 points)
         </Button>
-      </Box>
+      </Paper>
 
       <Grid container spacing={3}>
         <Grid item xs={12} md={6}>

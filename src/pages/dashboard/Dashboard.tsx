@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   Grid,
+  useTheme,
   Paper,
   Typography,
   Box,
@@ -30,12 +31,23 @@ import {
   LineChart,
   Line,
 } from 'recharts';
-import { Help as HelpIcon } from '@mui/icons-material';
+import {
+  Help as HelpIcon,
+  TaskAltRounded,
+  PendingActionsRounded,
+  StarRounded,
+  TimerOutlined,
+} from '@mui/icons-material';
+import StatCard from '../../components/StatCard';
 import useTaskStore from '../../store/taskStore';
 import usePomodoroStore from '../../store/pomodoroStore';
 import useRewardStore from '../../store/rewardStore';
 
+const shortDate = (d: string) =>
+  new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+
 function Dashboard() {
+  const theme = useTheme();
   const [showHelp, setShowHelp] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
 
@@ -123,277 +135,227 @@ function Dashboard() {
     setActiveStep(0);
   };
 
+  const chartAxis = { fontSize: 12, fill: theme.palette.text.secondary };
+  const chartTooltip = {
+    backgroundColor: theme.palette.background.paper,
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: 10,
+    boxShadow: '0 8px 24px rgba(15,23,42,0.12)',
+    color: theme.palette.text.primary,
+  };
+  const streakActive = streakInfo.currentStreak >= 2;
+  const totalFocusHours = (
+    concentrationChartData.reduce((sum, d) => sum + d.minutes, 0) / 60
+  ).toFixed(1);
+
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-        <Typography variant="h4">Dashboard</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Box>
+          <Typography variant="h4">Dashboard</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Your focus and progress at a glance
+          </Typography>
+        </Box>
         <Tooltip title="Help">
-          <IconButton onClick={() => setShowHelp(true)}>
+          <IconButton onClick={() => setShowHelp(true)} aria-label="Help">
             <HelpIcon />
           </IconButton>
         </Tooltip>
       </Box>
 
       <Grid container spacing={3}>
-        {/* Streak Overview - Updated Dark Mode Colors */}
         <Grid item xs={12}>
           <Paper
             sx={{
-              p: 3,
-              background:
-                streakInfo.currentStreak >= 2
-                  ? 'linear-gradient(135deg, #2a9d8f 0%, #1a6b61 100%)'
-                  : 'linear-gradient(135deg, #2d3748 0%, #1a202c 100%)',
-              color: 'white',
+              p: { xs: 3, md: 4 },
+              border: 'none',
+              color: '#fff',
               position: 'relative',
               overflow: 'hidden',
-              '&::before': {
+              background: streakActive
+                ? 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 55%, #ec4899 120%)'
+                : 'linear-gradient(135deg, #334155 0%, #1e293b 100%)',
+              '&::after': {
                 content: '""',
                 position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
+                inset: 0,
                 background:
-                  'radial-gradient(circle at 100% 0%, rgba(255,255,255,0.15) 0%, transparent 50%)',
+                  'radial-gradient(circle at 90% 0%, rgba(255,255,255,0.22) 0%, transparent 55%)',
+                pointerEvents: 'none',
               },
             }}
           >
-            <Grid container alignItems="center" spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Typography variant="h5" gutterBottom sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                  Concentration Streak
+            <Box
+              sx={{
+                position: 'relative',
+                zIndex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 3,
+                flexWrap: 'wrap',
+              }}
+            >
+              <Box>
+                <Typography variant="overline" sx={{ opacity: 0.85, letterSpacing: '0.08em' }}>
+                  Concentration streak
                 </Typography>
-                <Typography variant="h2" sx={{ fontWeight: 'bold', mb: 1, color: 'white' }}>
-                  {streakInfo.currentStreak} {streakInfo.currentStreak === 1 ? 'Day' : 'Days'}
+                <Typography variant="h2" sx={{ fontWeight: 800, letterSpacing: '-0.03em' }}>
+                  {streakInfo.currentStreak} {streakInfo.currentStreak === 1 ? 'day' : 'days'}
                 </Typography>
-                {streakInfo.currentStreak >= 2 ? (
-                  <Typography variant="h6" sx={{ color: 'rgba(255,255,255,0.9)' }}>
-                    Next Reward: {streakInfo.currentStreak * 10} Points
-                  </Typography>
-                ) : (
-                  <Typography variant="body1" sx={{ color: 'rgba(255,255,255,0.8)' }}>
-                    Complete 60 minutes of focused work today to start your streak!
-                  </Typography>
-                )}
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    height: '100%',
-                  }}
-                >
-                  <Box
-                    sx={{
-                      width: 120,
-                      height: 120,
-                      borderRadius: '50%',
-                      border: '4px solid',
-                      borderColor: streakInfo.currentStreak >= 2 ? '#4fd1c5' : '#4a5568',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      position: 'relative',
-                      '&::before': {
-                        content: '""',
-                        position: 'absolute',
-                        top: -4,
-                        left: -4,
-                        right: -4,
-                        bottom: -4,
-                        borderRadius: '50%',
-                        border: '2px dashed',
-                        borderColor:
-                          streakInfo.currentStreak >= 2
-                            ? 'rgba(79,209,197,0.4)'
-                            : 'rgba(255,255,255,0.2)',
-                        animation: 'spin 20s linear infinite',
-                      },
-                    }}
-                  >
-                    <Typography
-                      variant="h3"
-                      sx={{
-                        fontWeight: 'bold',
-                        color: streakInfo.currentStreak >= 2 ? '#4fd1c5' : 'white',
-                      }}
-                    >
-                      {streakInfo.currentStreak}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Grid>
-            </Grid>
+                <Typography sx={{ opacity: 0.9, maxWidth: 420 }}>
+                  {streakActive
+                    ? `Keep it going: your next streak reward is ${streakInfo.currentStreak * 10} points.`
+                    : 'Complete 60 minutes of focused work today to start your streak.'}
+                </Typography>
+              </Box>
+              <Box
+                aria-hidden
+                sx={{
+                  display: { xs: 'none', sm: 'grid' },
+                  width: 112,
+                  height: 112,
+                  borderRadius: '50%',
+                  placeItems: 'center',
+                  fontSize: 44,
+                  fontWeight: 800,
+                  bgcolor: 'rgba(255,255,255,0.16)',
+                  border: '2px solid rgba(255,255,255,0.45)',
+                  backdropFilter: 'blur(6px)',
+                }}
+              >
+                {streakInfo.currentStreak}
+              </Box>
+            </Box>
           </Paper>
         </Grid>
 
-        {/* Task Overview - Updated Dark Mode Colors */}
-        <Grid item xs={12} md={6}>
-          <Paper
-            sx={{
-              p: 2,
-              bgcolor: 'background.paper',
-              '& .MuiTypography-root': {
-                color: 'text.primary',
-              },
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Task Overview
-            </Typography>
-            <Typography variant="body1">Completed Tasks: {completedTasks.length}</Typography>
-            <Typography variant="body1">Pending Tasks: {pendingTasks.length}</Typography>
-          </Paper>
+        <Grid item xs={6} md={3}>
+          <StatCard
+            label="Completed"
+            value={completedTasks.length}
+            icon={<TaskAltRounded />}
+            color="success.main"
+          />
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <StatCard
+            label="Pending"
+            value={pendingTasks.length}
+            icon={<PendingActionsRounded />}
+            color="warning.main"
+          />
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <StatCard label="Points" value={points} icon={<StarRounded />} color="secondary.main" />
+        </Grid>
+        <Grid item xs={6} md={3}>
+          <StatCard label="Focus (7 days)" value={`${totalFocusHours}h`} icon={<TimerOutlined />} />
         </Grid>
 
-        {/* Points Overview - Updated Dark Mode Colors */}
-        <Grid item xs={12} md={6}>
-          <Paper
-            sx={{
-              p: 2,
-              bgcolor: 'background.paper',
-              '& .MuiTypography-root': {
-                color: 'text.primary',
-              },
-            }}
-          >
+        <Grid item xs={12} md={7}>
+          <Paper sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom>
-              Reward Points
+              Daily focus time
             </Typography>
-            <Typography variant="h4">{points}</Typography>
-          </Paper>
-        </Grid>
-
-        {/* Recent Sessions - Updated Dark Mode Colors */}
-        <Grid item xs={12} md={6}>
-          <Paper
-            sx={{
-              p: 2,
-              bgcolor: 'background.paper',
-              '& .MuiTypography-root': {
-                color: 'text.primary',
-              },
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Recent Sessions
-            </Typography>
-            <List>
-              {recentSessions.map((session) => (
-                <ListItem key={session.id}>
-                  <ListItemText
-                    primary={
-                      session.startTime
-                        ? new Date(session.startTime).toLocaleDateString()
-                        : 'Unknown date'
-                    }
-                    secondary={`${session.type} session`}
-                    primaryTypographyProps={{ color: 'text.primary' }}
-                    secondaryTypographyProps={{ color: 'text.secondary' }}
-                  />
-                </ListItem>
-              ))}
-            </List>
-          </Paper>
-        </Grid>
-
-        {/* Completed Tasks Chart - Updated Dark Mode Colors */}
-        <Grid item xs={12} md={6}>
-          <Paper
-            sx={{
-              p: 2,
-              bgcolor: 'background.paper',
-              '& .MuiTypography-root': {
-                color: 'text.primary',
-              },
-            }}
-          >
-            <Typography variant="h6" gutterBottom>
-              Completed Tasks (Last 7 Days)
-            </Typography>
-            <Box sx={{ height: 300 }}>
+            <Box sx={{ height: 280 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={taskChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <LineChart data={concentrationChartData} margin={{ top: 8, right: 8, left: -12 }}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={theme.palette.divider}
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.7)' }}
-                    angle={-45}
-                    textAnchor="end"
-                    stroke="rgba(255,255,255,0.7)"
+                    tickFormatter={shortDate}
+                    tick={chartAxis}
+                    tickLine={false}
+                    axisLine={false}
                   />
-                  <YAxis tick={{ fill: 'rgba(255,255,255,0.7)' }} stroke="rgba(255,255,255,0.7)" />
+                  <YAxis
+                    tickFormatter={(v) => `${v}m`}
+                    tick={chartAxis}
+                    tickLine={false}
+                    axisLine={false}
+                  />
                   <RechartsTooltip
-                    formatter={(value) => [`${value} tasks`, 'Completed']}
-                    labelFormatter={(label) => `Date: ${label}`}
-                    contentStyle={{
-                      backgroundColor: 'rgba(45, 55, 72, 0.95)',
-                      border: 'none',
-                      borderRadius: '4px',
-                      color: 'white',
-                    }}
+                    formatter={(value) => [`${value} min`, 'Focus time']}
+                    contentStyle={chartTooltip}
                   />
-                  <Bar dataKey="count" fill="#4fd1c5" radius={[4, 4, 0, 0]} />
+                  <Line
+                    type="monotone"
+                    dataKey="minutes"
+                    stroke={theme.palette.primary.main}
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: theme.palette.primary.main, strokeWidth: 0 }}
+                    activeDot={{ r: 7 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </Box>
+          </Paper>
+        </Grid>
+
+        <Grid item xs={12} md={5}>
+          <Paper sx={{ p: 3, height: '100%' }}>
+            <Typography variant="h6" gutterBottom>
+              Tasks completed
+            </Typography>
+            <Box sx={{ height: 280 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={taskChartData} margin={{ top: 8, right: 8, left: -24 }}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke={theme.palette.divider}
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={shortDate}
+                    tick={chartAxis}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis allowDecimals={false} tick={chartAxis} tickLine={false} axisLine={false} />
+                  <RechartsTooltip
+                    cursor={{ fill: theme.palette.action.hover }}
+                    formatter={(value) => [`${value} tasks`, 'Completed']}
+                    contentStyle={chartTooltip}
+                  />
+                  <Bar dataKey="count" fill={theme.palette.secondary.main} radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </Box>
           </Paper>
         </Grid>
 
-        {/* Concentration Time Chart - Updated Dark Mode Colors */}
         <Grid item xs={12}>
-          <Paper
-            sx={{
-              p: 2,
-              bgcolor: 'background.paper',
-              '& .MuiTypography-root': {
-                color: 'text.primary',
-              },
-            }}
-          >
+          <Paper sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
-              Daily Concentration Time (Last 7 Days)
+              Recent sessions
             </Typography>
-            <Box sx={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={concentrationChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 12, fill: 'rgba(255,255,255,0.7)' }}
-                    angle={-45}
-                    textAnchor="end"
-                    stroke="rgba(255,255,255,0.7)"
-                  />
-                  <YAxis
-                    tickFormatter={(value) => `${value}h`}
-                    tick={{ fill: 'rgba(255,255,255,0.7)' }}
-                    stroke="rgba(255,255,255,0.7)"
-                  />
-                  <RechartsTooltip
-                    formatter={(value) => [`${value} hours`, 'Concentration Time']}
-                    labelFormatter={(label) => `Date: ${label}`}
-                    contentStyle={{
-                      backgroundColor: 'rgba(45, 55, 72, 0.95)',
-                      border: 'none',
-                      borderRadius: '4px',
-                      color: 'white',
-                    }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="hours"
-                    stroke="#4fd1c5"
-                    strokeWidth={2}
-                    dot={{ fill: '#4fd1c5', strokeWidth: 2 }}
-                    activeDot={{ r: 8, fill: '#4fd1c5' }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </Box>
+            {recentSessions.length === 0 ? (
+              <Typography color="text.secondary">
+                No sessions yet. Start a Pomodoro to see your history here.
+              </Typography>
+            ) : (
+              <List disablePadding>
+                {recentSessions.map((session) => (
+                  <ListItem key={session.id} divider sx={{ px: 0 }}>
+                    <ListItemText
+                      primary={
+                        session.startTime
+                          ? new Date(session.startTime).toLocaleDateString()
+                          : 'Unknown date'
+                      }
+                      secondary={`${session.duration ?? 0} min · ${session.type} session`}
+                    />
+                  </ListItem>
+                ))}
+              </List>
+            )}
           </Paper>
         </Grid>
       </Grid>

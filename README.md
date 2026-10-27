@@ -31,6 +31,10 @@ npm run dev        # http://localhost:5173
 
 See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for the folder layout.
 
+## Deploy
+
+Import the repo in Vercel (framework preset: Vite). `vercel.json` rewrites all routes to `index.html` for client-side routing.
+
 ## Debug helpers (browser console)
 
 ```js

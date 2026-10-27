@@ -50,6 +50,25 @@ A checklist per task. Steps never complete the task and never pay points (so spl
 
 A streak day needs 60 focus minutes in the user's time zone. A shorter day leaves the streak alone; a missed day ends it. From day 2 the day that reaches the goal pays `streak x 10` bonus points.
 
+## Push notifications
+
+Web Push with VAPID keys; switched off unless `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` are set (`GET /features` then reports `push: true`).
+
+| Method     | Path               | Notes                                                                                                                                                                                   |
+| ---------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET        | `/push/public-key` | Key the browser subscribes with. `503` when push is not configured                                                                                                                      |
+| POST       | `/push/subscribe`  | `{ endpoint, keys: { p256dh, auth } }` from `PushSubscription.toJSON()`. HTTPS endpoints only. A browser that signs in as someone else takes the subscription over. At most 10 per user |
+| DELETE     | `/push/subscribe`  | `{ endpoint }`, only removes the caller's own                                                                                                                                           |
+| GET, PATCH | `/push/settings`   | `dueReminders`, `timerEnd` toggles; also reports `available` and how many browsers are subscribed                                                                                       |
+| POST       | `/push/test`       | Sends a test notification to the caller's browsers. 5 per minute                                                                                                                        |
+
+Two reminders are sent by the background job (every `JOBS_INTERVAL_MINUTES`, default 1):
+
+- **Task due soon:** an open task due within the next hour, once. Changing the due date earns a new reminder.
+- **Focus session finished:** a running session whose planned time has passed (and is less than 6 hours old). The service worker skips it when the app window is already in front.
+
+Delivery is at most once: a reminder is marked sent before it is delivered, so a crash loses it instead of repeating it. Subscriptions the push service reports as gone (404 or 410) are deleted.
+
 ## Points and rewards
 
 | Method | Path                 | Notes                                                                                                                         |
@@ -70,7 +89,7 @@ A streak day needs 60 focus minutes in the user's time zone. A shorter day leave
 
 ## Background jobs
 
-The API runs a job every `JOBS_INTERVAL_MINUTES` (default 15) while `JOBS_ENABLED=true`.
+The API runs a job every `JOBS_INTERVAL_MINUTES` (default 1) while `JOBS_ENABLED=true`.
 
 - **Overdue penalty.** An open task whose due date has passed costs its quadrant's points, once. A balance never goes below zero, and a task that could not be charged is still marked as processed so points earned later are safe. Only one API instance runs the job at a time (a Postgres advisory lock).
 

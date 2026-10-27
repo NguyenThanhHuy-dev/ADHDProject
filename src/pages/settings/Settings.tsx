@@ -12,7 +12,6 @@ import {
   ListItemIcon,
 } from '@mui/material';
 import {
-  Notifications as NotificationsIcon,
   VolumeUp as VolumeUpIcon,
   DarkMode as DarkModeIcon,
   Language as LanguageIcon,
@@ -20,7 +19,7 @@ import {
 } from '@mui/icons-material';
 import useSoundStore from '../../store/soundStore';
 import useThemeStore from '../../store/themeStore';
-import useNotificationStore from '../../store/notificationStore';
+import PushSettings from './PushSettings';
 
 function Settings() {
   const soundEnabled = useSoundStore((state) => state.soundEnabled);
@@ -29,26 +28,6 @@ function Settings() {
   const toggleDarkMode = useThemeStore((state) => state.toggleDarkMode);
   const reducedMotion = useThemeStore((state) => state.reducedMotion);
   const toggleReducedMotion = useThemeStore((state) => state.toggleReducedMotion);
-  const notificationsEnabled = useNotificationStore((state) => state.notificationsEnabled);
-  const toggleNotifications = useNotificationStore((state) => state.toggleNotifications);
-
-  const handleNotificationToggle = async () => {
-    if (!notificationsEnabled) {
-      try {
-        const permission = await Notification.requestPermission();
-        if (permission === 'granted') {
-          toggleNotifications();
-        } else {
-          alert('Please enable notifications in your browser settings to use this feature.');
-        }
-      } catch (error) {
-        console.error('Error requesting notification permission:', error);
-        alert('Failed to request notification permission. Please check your browser settings.');
-      }
-    } else {
-      toggleNotifications();
-    }
-  };
 
   return (
     <Box>
@@ -75,26 +54,7 @@ function Settings() {
             />
           </ListItem>
           <Divider />
-          <ListItem>
-            <ListItemIcon>
-              <NotificationsIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary="Notifications"
-              secondary="Enable or disable notifications for tasks and breaks"
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={notificationsEnabled}
-                  onChange={handleNotificationToggle}
-                  color="primary"
-                />
-              }
-              label=""
-            />
-          </ListItem>
-          <Divider />
+          <PushSettings />
           <ListItem>
             <ListItemIcon>
               <DarkModeIcon />

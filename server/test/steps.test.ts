@@ -185,7 +185,7 @@ describe('AI suggestions endpoint', () => {
     expect(
       (await app.inject({ method: 'POST', url: `/api/tasks/${task.id}/steps/suggest` })).statusCode,
     ).toBe(401);
-    expect((await app.inject({ method: 'GET', url: '/api/features' })).json()).toEqual({
+    expect((await app.inject({ method: 'GET', url: '/api/features' })).json()).toMatchObject({
       aiSteps: true,
     });
   });
@@ -209,7 +209,7 @@ describe('AI not configured', () => {
       headers: { cookie },
     });
     expect(res.statusCode).toBe(503);
-    expect((await bare.app.inject({ method: 'GET', url: '/api/features' })).json()).toEqual({
+    expect((await bare.app.inject({ method: 'GET', url: '/api/features' })).json()).toMatchObject({
       aiSteps: false,
     });
     await bare.close();

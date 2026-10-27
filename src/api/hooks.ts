@@ -255,7 +255,7 @@ export const useOverview = () =>
 export const useFeatures = () =>
   useQuery({
     queryKey: ['features'],
-    queryFn: () => api<{ aiSteps: boolean }>('GET', '/features'),
+    queryFn: () => api<{ aiSteps: boolean; push: boolean }>('GET', '/features'),
     staleTime: Infinity,
   });
 

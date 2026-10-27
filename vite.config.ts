@@ -8,6 +8,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      // A custom worker: besides caching the shell it shows push notifications.
+      strategies: 'injectManifest',
+      srcDir: 'src',
+      filename: 'sw.ts',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'ADHD Focus',
@@ -24,13 +28,7 @@ export default defineConfig({
           { src: 'pwa-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: {
-        // The app shell and sounds work offline; data always comes from the API.
-        globPatterns: ['**/*.{js,css,html,svg,png,mp3}'],
-        navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/api\//],
-        runtimeCaching: [{ urlPattern: /^\/api\//, handler: 'NetworkOnly' }],
-      },
+      injectManifest: { globPatterns: ['**/*.{js,css,html,svg,png,mp3}'] },
     }),
   ],
   server: { proxy: { '/api': 'http://localhost:3001' } },

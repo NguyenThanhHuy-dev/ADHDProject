@@ -87,7 +87,12 @@ export const taskRoutes: FastifyPluginAsync = async (app) => {
     }
     const [task] = await app.db
       .update(tasks)
-      .set({ ...body, updatedAt: new Date() })
+      // A new due date deserves a fresh reminder.
+      .set({
+        ...body,
+        ...(body.dueAt !== undefined && { remindedAt: null }),
+        updatedAt: new Date(),
+      })
       .where(owned(id, request.user.sub))
       .returning();
     if (!task) return reply.status(404).send({ error: 'Task not found' });

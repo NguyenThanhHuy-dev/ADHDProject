@@ -13,7 +13,7 @@ const schema = z.object({
     .enum(['true', 'false'])
     .default('true')
     .transform((v) => v === 'true'),
-  JOBS_INTERVAL_MINUTES: z.coerce.number().int().min(1).default(15),
+  JOBS_INTERVAL_MINUTES: z.coerce.number().int().min(1).default(1),
   // Optional: without a key the "suggest steps" feature is switched off.
   // An empty value (as docker compose passes when unset) means "not configured".
   ANTHROPIC_API_KEY: z
@@ -21,6 +21,19 @@ const schema = z.object({
     .optional()
     .transform((v) => v || undefined),
   AI_MODEL: z.string().min(1).default('claude-opus-5-5'),
+  // Web Push (VAPID). All three or none: without them reminders are switched off.
+  VAPID_PUBLIC_KEY: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined),
+  VAPID_PRIVATE_KEY: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined),
+  VAPID_SUBJECT: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined),
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
 });
 

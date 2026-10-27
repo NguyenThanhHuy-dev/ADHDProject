@@ -32,6 +32,7 @@ daily focus streaks and a gacha-style reward system. Accounts and data live in P
 - Eisenhower matrix (Q1-Q4) with points per quadrant, repeating tasks (daily or weekly) and an overdue penalty job
 - Streaks counted per day in your own time zone, with bonus points from day 2
 - Task steps (a small checklist per task) with optional AI suggestions: Claude splits a big task into 3-8 concrete steps and you pick which to keep
+- Push notifications (Web Push): a reminder when a task is due within the hour and when a focus session ends, even with the tab closed
 - Installable as an app (PWA): the shell works offline, your data stays on the server
 - Reduce-motion setting; dark mode and motion preferences are remembered and follow your system the first time
 - Insights: focus calendar (heatmap), best time of day, weekly trend, completion by priority
@@ -52,6 +53,8 @@ npm run dev                          # web on http://localhost:5173 (proxies /ap
 ```
 
 Optional: set `ANTHROPIC_API_KEY` in `server/.env` to switch on "Suggest steps with AI" (model from `AI_MODEL`, default `claude-opus-5-5`; a smaller model such as `claude-haiku-5-5` is cheaper). Without a key the button is simply hidden.
+
+Optional: for push notifications create keys with `npx web-push generate-vapid-keys` and set `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT` (for example `mailto:you@example.com`) in `server/.env`; then turn them on in Settings. Browsers only allow push on `localhost` or HTTPS, and on iPhone only for an app added to the Home Screen.
 
 Create an account on the sign-in screen. Tasks saved in the browser before accounts existed can be imported from the banner on first sign-in (points and rewards are not imported: they only come from server-verified activity).
 

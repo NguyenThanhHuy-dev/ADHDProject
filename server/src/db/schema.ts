@@ -1,4 +1,5 @@
 import {
+  boolean,
   date,
   index,
   integer,
@@ -30,6 +31,8 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   displayName: text('display_name').notNull(),
   timezone: text('timezone').notNull().default('UTC'),
+  notifyDueReminders: boolean('notify_due_reminders').notNull().default(true),
+  notifyTimerEnd: boolean('notify_timer_end').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -46,6 +49,8 @@ export const tasks = pgTable(
     recurrence: recurrenceEnum('recurrence').notNull().default('none'),
     dueAt: timestamp('due_at', { withTimezone: true }),
     completedAt: timestamp('completed_at', { withTimezone: true }),
+    // Set when the "due soon" push was sent; cleared if the due date changes.
+    remindedAt: timestamp('reminded_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
@@ -70,6 +75,23 @@ export const taskSteps = pgTable(
   (t) => [index('task_steps_task_idx').on(t.taskId, t.position)],
 );
 
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    // One browser profile = one endpoint; signing in as someone else on it moves the row.
+    endpoint: text('endpoint').notNull().unique(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('push_subscriptions_user_idx').on(t.userId)],
+);
+
 export const pomodoroSessions = pgTable(
   'pomodoro_sessions',
   {
@@ -82,6 +104,8 @@ export const pomodoroSessions = pgTable(
     status: sessionStatusEnum('status').notNull().default('active'),
     startedAt: timestamp('started_at', { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp('completed_at', { withTimezone: true }),
+    // Set when the "time is up" push was sent.
+    notifiedAt: timestamp('notified_at', { withTimezone: true }),
   },
   (t) => [
     index('sessions_user_status_idx').on(t.userId, t.status, t.completedAt),
@@ -136,5 +160,6 @@ export const userStreaks = pgTable('user_streaks', {
 
 export type User = typeof users.$inferSelect;
 export type Task = typeof tasks.$inferSelect;
+export type PushSubscriptionRow = typeof pushSubscriptions.$inferSelect;
 export type TaskStep = typeof taskSteps.$inferSelect;
 export type PomodoroSession = typeof pomodoroSessions.$inferSelect;

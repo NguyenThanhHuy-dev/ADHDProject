@@ -2,6 +2,8 @@ import { and, eq, isNull, lt, sql } from 'drizzle-orm';
 import type { Db } from '../db/types';
 import { pointLedger, tasks, users } from '../db/schema';
 import { award, getBalance, QUADRANT_POINTS, type Tx } from '../domain/points';
+import type { PushSender } from '../services/push';
+import { claimDueReminders, claimTimerEnds, deliverOutbox } from './reminders';
 
 type Executor = Db | Tx;
 
@@ -50,10 +52,27 @@ export const penalizeOverdueTasks = async (db: Executor, now: Date) => {
 /** Cluster-wide lock id: only one API instance runs the scheduled jobs at a time. */
 const JOBS_LOCK = sql`hashtext('adhd.scheduled-jobs')`;
 
-export const runScheduledJobs = async (db: Db, now: Date) =>
-  db.transaction(async (tx) => {
+/**
+ * One pass of every background job. Database work (penalties and claiming reminders) happens inside
+ * a transaction that holds the advisory lock; the slow part, talking to push services, happens after
+ * it commits so the lock is never held across network calls. Delivery is at-most-once: a reminder
+ * is marked sent before it is delivered, so a crash loses it rather than repeating it.
+ */
+export const runScheduledJobs = async (db: Db, now: Date, sender: PushSender | null = null) => {
+  const pass = await db.transaction(async (tx) => {
     const result = await tx.execute(sql`select pg_try_advisory_xact_lock(${JOBS_LOCK}) as locked`);
     const locked = (result as unknown as { rows: { locked: boolean }[] }).rows[0]?.locked;
-    if (!locked) return { skipped: true as const };
-    return { skipped: false as const, overdue: await penalizeOverdueTasks(tx, now) };
+    if (!locked) return null;
+    const overdue = await penalizeOverdueTasks(tx, now);
+    const outbox = sender
+      ? [...(await claimDueReminders(tx, now)), ...(await claimTimerEnds(tx, now))]
+      : [];
+    return { overdue, outbox };
   });
+  if (!pass) return { skipped: true as const };
+
+  const notifications = sender
+    ? { claimed: pass.outbox.length, ...(await deliverOutbox(db, sender, pass.outbox)) }
+    : { claimed: 0, sent: 0, gone: 0, failed: 0 };
+  return { skipped: false as const, overdue: pass.overdue, notifications };
+};

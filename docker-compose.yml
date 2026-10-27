@@ -29,12 +29,16 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://adhd:adhd_dev_password@db:5432/adhd_focus
-      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET to a random string of at least 32 characters}
+      JWT_SECRET: ${JWT_SECRET:-} # required by `--profile full` (the API refuses to start without 32+ characters)
       CORS_ORIGIN: http://localhost:8080
       TRUST_PROXY: 'true'
       # Optional: enables "suggest steps" on tasks
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-claude-opus-5-5}
+      # Optional: push notifications (generate keys with `npx web-push generate-vapid-keys`)
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
+      VAPID_SUBJECT: ${VAPID_SUBJECT:-}
     healthcheck:
       test:
         [

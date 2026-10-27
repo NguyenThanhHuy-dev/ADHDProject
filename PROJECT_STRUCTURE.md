@@ -15,7 +15,8 @@ src/
 │   ├── rewards/
 │   ├── profile/
 │   └── settings/
-├── api/               # fetch client, React Query hooks, mappers, legacy import
+├── api/               # fetch client, React Query hooks, mappers, legacy import, push subscription
+├── sw.ts, sw/         # service worker (offline shell, push) and its testable logic
 ├── store/             # Zustand stores for UI-only state (theme, sound, notifications)
 ├── test/setup.ts      # Vitest setup (jsdom polyfills)
 ├── theme.ts           # MUI theme (light and dark)
@@ -27,8 +28,8 @@ docs/screenshots/      # Images used by README
 server/                # REST API (Fastify + Drizzle + PostgreSQL)
 ├── src/routes/        # auth, tasks, steps, sessions, points, rewards, stats, import
 ├── src/domain/        # points ledger, streak, gacha, stats and recurrence rules (no HTTP)
-├── src/jobs/          # overdue penalty job and scheduler
-├── src/services/      # Anthropic client for step suggestions
+├── src/jobs/          # overdue penalty, push reminders and the scheduler
+├── src/services/      # Anthropic client (step suggestions), Web Push sender
 ├── src/db/            # schema, client, migrate
 ├── drizzle/           # generated SQL migrations
 └── test/              # API tests (in-memory Postgres)

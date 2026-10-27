@@ -13,11 +13,13 @@ import { randomInt } from 'node:crypto';
 import { authRoutes } from './routes/auth';
 import { importRoutes } from './routes/import';
 import { pointRoutes } from './routes/points';
+import { pushRoutes } from './routes/push';
 import { rewardRoutes } from './routes/rewards';
 import { sessionRoutes } from './routes/sessions';
 import { statsRoutes } from './routes/stats';
 import { stepRoutes } from './routes/steps';
 import type { StepSuggester } from './services/ai';
+import type { PushSender } from './services/push';
 import { taskRoutes } from './routes/tasks';
 
 declare module 'fastify' {
@@ -30,6 +32,8 @@ declare module 'fastify' {
     random: () => number;
     /** Null when no AI provider is configured. */
     suggester: StepSuggester | null;
+    /** Null when VAPID keys are not configured. */
+    pushSender: PushSender | null;
   }
 }
 
@@ -44,6 +48,7 @@ export interface AppDeps {
   now?: () => Date;
   random?: () => number;
   suggester?: StepSuggester | null;
+  pushSender?: PushSender | null;
 }
 
 const secureRandom = () => randomInt(0, 2 ** 32) / 2 ** 32;
@@ -64,6 +69,7 @@ export const buildApp = async (
   app.decorate('now', deps.now ?? (() => new Date()));
   app.decorate('random', deps.random ?? secureRandom);
   app.decorate('suggester', deps.suggester ?? null);
+  app.decorate('pushSender', deps.pushSender ?? null);
 
   await app.register(helmet);
   await app.register(cors, { origin: config.CORS_ORIGIN, credentials: true });
@@ -89,7 +95,10 @@ export const buildApp = async (
   });
 
   // Lets the web app hide features this server cannot provide.
-  app.get('/api/features', async () => ({ aiSteps: app.suggester !== null }));
+  app.get('/api/features', async () => ({
+    aiSteps: app.suggester !== null,
+    push: app.pushSender !== null,
+  }));
 
   app.get('/api/health', async (_request, reply) => {
     try {
@@ -106,6 +115,7 @@ export const buildApp = async (
   await app.register(pointRoutes, { prefix: '/api/points' });
   await app.register(rewardRoutes, { prefix: '/api/rewards' });
   await app.register(importRoutes, { prefix: '/api/import' });
+  await app.register(pushRoutes, { prefix: '/api/push' });
   await app.register(statsRoutes, { prefix: '/api/stats' });
 
   return app;

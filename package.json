@@ -64,5 +64,10 @@
   },
   "workspaces": [
     "server"
-  ]
+  ],
+  "author": "NguyenThanhHuy-dev",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NguyenThanhHuy-dev/ADHDProject.git"
+  }
 }

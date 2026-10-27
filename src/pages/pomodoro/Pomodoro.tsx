@@ -65,7 +65,7 @@ function Pomodoro() {
   const [breakTime, setBreakTime] = useState(DEFAULT_BREAK_TIME);
   const [totalTime, setTotalTime] = useState(DEFAULT_WORK_TIME * 60);
   const [selectedTask, setSelectedTask] = useState<number | ''>('');
-  const timerRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
+  const endAtRef = useRef(0);
   const progressRef = useRef<SVGCircleElement>(null);
   const [showHelp, setShowHelp] = useState(false);
   const [activeStep, setActiveStep] = useState(0);
@@ -105,22 +105,13 @@ function Pomodoro() {
     },
   ];
 
+  // Remaining time is derived from a wall-clock deadline so background-tab throttling cannot drift it.
   useEffect(() => {
-    if (isRunning) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current);
-            // eslint-disable-next-line react-hooks/immutability
-            handleTimerComplete();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(timerRef.current);
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- shortcut: re-subscribes only on run/stop; upgrade with a ref to the latest callback
+    if (!isRunning) return;
+    const id = setInterval(() => {
+      setTimeLeft(Math.max(0, Math.ceil((endAtRef.current - Date.now()) / 1000)));
+    }, 250);
+    return () => clearInterval(id);
   }, [isRunning]);
 
   useEffect(() => {
@@ -166,6 +157,7 @@ function Pomodoro() {
     } else {
       playSound('notification');
     }
+    if (!isRunning) endAtRef.current = Date.now() + timeLeft * 1000;
     setIsRunning(!isRunning);
   };
 
@@ -206,6 +198,16 @@ function Pomodoro() {
       setIsWorkMode(true);
     }
   };
+
+  // Completion is a reaction to reaching zero, not a side effect inside a state updater,
+  // so it runs exactly once (StrictMode double-invokes updaters).
+  const onCompleteRef = useRef<() => void>(() => {});
+  useEffect(() => {
+    onCompleteRef.current = handleTimerComplete;
+  });
+  useEffect(() => {
+    if (isRunning && timeLeft === 0) onCompleteRef.current();
+  }, [isRunning, timeLeft]);
 
   const handleSettingsSave = () => {
     setTimeLeft(workTime * 60);
